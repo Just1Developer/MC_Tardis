@@ -10,8 +10,10 @@ public class TardisModelType {
 	private static final int DATA_MIN = 1000000, DATA_MAX = 9999999 - DATA_MIN, SEED = 38589201;
 	private static final Random r_gen = new Random(SEED);
 
+	private static int i = 250;
+	
 	public static final TardisModelType TARDIS_OUTER_STATIC = new TardisModelType(
-			"outer-static", Material.BEDROCK, r_next(), false, false);
+			"outer-static", Material.SEA_LANTERN, 250, false, false);
 	public static final TardisModelType TARDIS_OUTER_ENTER = new TardisModelType(
 			"outer-enter", Material.BEDROCK, r_next(), false, false);
 	public static final TardisModelType TARDIS_OUTER_EXIT = new TardisModelType(
@@ -24,7 +26,8 @@ public class TardisModelType {
 			"interior-console", Material.BEDROCK, r_next(), false, false);
 
 	private static int r_next() {
-		return r_gen.nextInt(DATA_MAX) + DATA_MIN;
+		//return r_gen.nextInt(DATA_MAX) + DATA_MIN;
+		return i++;
 	}
 
 	public final String modelName;
