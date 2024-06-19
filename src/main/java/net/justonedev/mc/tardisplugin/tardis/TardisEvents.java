@@ -29,6 +29,9 @@ public class TardisEvents implements Listener {
             Tardis tardis = TardisPlugin.getTardisByEntityUUID(entity.getUniqueId());
             if (tardis == null) return;
             
+            // Is the player angled correctly to enter?
+            if (!isWithinDoorAngleTolerance(e.getPlayer(), entity)) return;
+            
             // This way, we can later do entry key validation and more
             tardis.enter(e.getPlayer());
         } else if (name.contains(TardisModelType.TARDIS_INNER_DOOR.modelName)) {
@@ -38,8 +41,7 @@ public class TardisEvents implements Listener {
             Optional<ArmorStand> model = tardis.getCurrentModelTardis();
             if (model.isEmpty()) return;
             
-            // Todo perhaps later modify location when we have set way to determine and set facing of the tardis
-            e.getPlayer().teleport(model.get().getLocation());
+            e.getPlayer().teleport(model.get().getLocation().clone().add(model.get().getLocation().getDirection()));
         }
     }
     
