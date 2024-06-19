@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -68,6 +69,16 @@ public class Tardis {
     
     UUID getCurrentModelTardisUUID() {
         return currentModelTardis == null ? null : currentModelTardis.getUniqueId();
+    }
+    
+    /**
+     * Gets a direction vector from the ArmorStand model's viewing direction. Returned vector is a copy.
+     * Returns a vector (0,0,0) when anything is null.
+     * @return A copy of a direction vector of the tardis shell.
+     */
+    Vector getCurrentModelDirectionVector() {
+        if (currentModelTardis == null) return new Vector(0, 0, 0);
+        return currentModelTardis.getLocation().getDirection().clone();
     }
     
     /**
