@@ -70,6 +70,14 @@ public class Tardis {
         return currentModelTardis == null ? null : currentModelTardis.getUniqueId();
     }
     
+    /**
+     * Gets the tardis entity or an empty optional if the tardis is not present in the 'real' world.
+     * @return The tardis entity or empty optional.
+     */
+    Optional<ArmorStand> getCurrentModelTardis() {
+        return currentModelTardis == null ? Optional.empty() : Optional.of(currentModelTardis);
+    }
+    
     void bindCurrentModelTardis(UUID armorStandUUID) {
         bindCurrentModelTardis(armorStandUUID, true);
     }

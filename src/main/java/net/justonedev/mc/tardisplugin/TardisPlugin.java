@@ -22,6 +22,7 @@ import org.bukkit.util.EulerAngle;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class TardisPlugin extends JavaPlugin implements Listener {
@@ -108,6 +109,17 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     public static Tardis getTardisByEntityUUID(UUID uuid) {
         return singleton.tardisesByEntityUUID.getOrDefault(uuid, null);
     }
+
+    /**
+     * Returns a tardis by any location located inside the interior of the tardis' plot.
+     * If it's not valid, will return null.
+     * @param loc The location.
+     * @return The tardis. null if the location is not inside any tardis.
+     */
+    public static Tardis getTardisByAnyPlotLocation(Location loc) {
+        Optional<Integer> tardisIDbyLoc = TardisWorldGen.calculateTardisIDbyLoc(loc.getBlockX(), loc.getBlockZ());
+		return tardisIDbyLoc.map(integer -> singleton.tardises.getOrDefault(integer, null)).orElse(null);
+	}
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
