@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.tardis;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.generator.BlockPopulator;
@@ -106,6 +107,14 @@ public final class TardisWorldGen {
         world = worldCreator.createWorld();
         if (world == null) return false;
         world.getWorldBorder().setSize(WORLD_BORDER_MAX);
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+        world.setTime(12000);   // High noon
+        world.setGameRule(GameRule.FIRE_DAMAGE, false);
+        world.setGameRule(GameRule.DO_FIRE_TICK, false);
+        world.setGameRule(GameRule.MOB_GRIEFING, false);
+        world.setGameRule(GameRule.DISABLE_RAIDS, true);
+        world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+        world.setClearWeatherDuration(Integer.MAX_VALUE);
         return true;
     }
 

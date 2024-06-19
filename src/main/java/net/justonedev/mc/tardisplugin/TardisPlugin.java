@@ -45,7 +45,8 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("tptardisworld").setExecutor(this);
         getCommand("home").setExecutor(this);
 
-        tardises = new TreeMap<>();
+        //tardises = new TreeMap<>();
+        tardises = new HashMap<>();
         TardisWorldGen.initialize();
         TardisFiles.initialize();
     }
@@ -56,8 +57,9 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         TardisFiles.saveAll();
     }
     
-    private static void spawnModel(Location loc, TardisModelType modelType) {
-        assert loc.getWorld() != null;
+    public static void spawnModel(Location _loc, TardisModelType modelType) {
+        assert _loc.getWorld() != null;
+        Location loc = new Location(_loc.getWorld(), _loc.getBlockX() + 0.5, _loc.getBlockY(), _loc.getBlockZ() + 0.5, 0, 0);
         ArmorStand armorStand = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);
         armorStand.setInvisible(true);
         armorStand.setInvulnerable(true);
@@ -65,7 +67,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         armorStand.setGravity(false);
         armorStand.setSmall(true);
         armorStand.setHeadPose(new EulerAngle(0, 0, 0));
-        armorStand.setCustomName("tardis-model-" + armorStand.getUniqueId());
+        armorStand.setCustomName(String.format("tardis-%s-%s", modelType.modelName, armorStand.getUniqueId()));
         armorStand.setCustomNameVisible(false);
         armorStand.setGlowing(modelType.shouldGlow);
         armorStand.setSmall(modelType.isBaby);
@@ -87,6 +89,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         Player p = (Player) sender;
         if (command.getName().equals("spawnmodel")) {
             spawnModel(p.getLocation().clone().add(1, 0, 0), TardisModelType.TARDIS_OUTER_STATIC);
+            Tardis.createNewTardis(p.getUniqueId());
         } else if (command.getName().equals("tptardisworld")) {
             p.teleport(TardisWorldGen.getInteriorWorld().getSpawnLocation());
         } else if (command.getName().equals("home")) {

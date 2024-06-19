@@ -47,4 +47,12 @@ public class TardisInteriorPlot {
         return beginZ;
     }
 
+    /**
+     * Gets the origin as Location object @ (X, 0, Z)
+     * @return The plot origin point.
+     */
+    public Location getOrigin() {
+        return new Location(TardisWorldGen.getInteriorWorld(), beginX, 0, beginZ);
+    }
+
 }

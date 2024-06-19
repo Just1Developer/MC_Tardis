@@ -20,9 +20,12 @@ public class TardisFiles {
     }
 
     public static void saveAll() {
+        System.out.println("Saving All TardisFiles");
         for (Tardis tardis : TardisPlugin.singleton.tardises.values()) {
+            System.out.println("Saving file " + tardis.getNumericID() + " + " + tardis.getFullUUIDString());
             saveToFile(tardis);
         }
+        System.out.println("Saved All TardisFiles");
     }
 
     public static void saveToFile(Tardis tardis) {
