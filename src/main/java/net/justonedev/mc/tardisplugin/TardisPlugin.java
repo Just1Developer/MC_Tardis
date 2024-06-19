@@ -1,5 +1,6 @@
 package net.justonedev.mc.tardisplugin;
 
+import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
 import net.justonedev.mc.tardisplugin.tardis.TardisModelType;
 import net.justonedev.mc.tardisplugin.tardis.TardisWorldGen;
@@ -17,9 +18,22 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.EulerAngle;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 public final class TardisPlugin extends JavaPlugin implements Listener {
-    
+
     public static TardisPlugin singleton;
+
+    /**
+     * Tardises uses ascending ID's to save tardises, but can't ensure correct order when loading.
+     * To ensure IDs stay the same regardless, we're using a TreeMap with O(log n) access instead
+     * and hope it's fast enough.
+     */
+    public Map<Integer, Tardis> tardises;
     
     @Override
     public void onEnable() {
@@ -31,13 +45,15 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("tptardisworld").setExecutor(this);
         getCommand("home").setExecutor(this);
 
-        TardisFiles.initialize();
+        tardises = new TreeMap<>();
         TardisWorldGen.initialize();
+        TardisFiles.initialize();
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        TardisFiles.saveAll();
     }
     
     private static void spawnModel(Location loc, TardisModelType modelType) {

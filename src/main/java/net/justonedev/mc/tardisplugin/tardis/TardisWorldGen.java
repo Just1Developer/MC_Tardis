@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 public final class TardisWorldGen {
@@ -25,6 +26,8 @@ public final class TardisWorldGen {
     //      59999968 - 59988000 = 19968
     //      Per side: 19968 => 9984
     private static final int PLOT_START_XZ = 9984;
+    private static final int TARDISES_PER_ROW = 12000;
+    private static final int TARDISES_LIMIT = TARDISES_PER_ROW * TARDISES_PER_ROW;
     // Console will be at center point of 4999 plot => 2500 x/y + offset of plot
 
     /**
@@ -33,8 +36,10 @@ public final class TardisWorldGen {
      */
     private static final int EDGE_WIDTH = 25;
 
-    private static final double WORLD_EDGE_COORD = 29999984;    // Maximum: 29999984, leave some edge too
-    private static final double WORLD_BORDER_MAX = 59999968;
+    private static final int WORLD_EDGE_COORD = 29999984;    // Maximum: 29999984, leave some edge too
+    private static final int ZERO_COORDINATE_OFFSET = WORLD_EDGE_COORD - PLOT_START_XZ;    // Maximum: 29999984, leave some edge too
+    private static final int WORLD_BORDER_MAX = 59999968;
+    private static final int PLOT_END_XZ = WORLD_BORDER_MAX - PLOT_START_XZ;
 
     private static final String INTERIOR_WORLD_NAME = "tardis_interior";
 
@@ -61,6 +66,37 @@ public final class TardisWorldGen {
 
     public static World getInteriorWorld() {
         return world;
+    }
+
+    /**
+     * Calculates the interior plot the tardis with the given ID would have.
+     * @param tardisID The tardis ID.
+     * @return An optional of the interior plot. Empty if ID is invalid.
+     */
+    public static Optional<TardisInteriorPlot> calculateInteriorPlotByID(int tardisID) {
+        if (tardisID < 0 || tardisID >= TARDISES_LIMIT) return Optional.empty();
+        int row = tardisID / TARDISES_PER_ROW;
+        int col = tardisID % TARDISES_PER_ROW;
+        int x = row * PLOT_SIZE - ZERO_COORDINATE_OFFSET;
+        int z = col * PLOT_SIZE - ZERO_COORDINATE_OFFSET;
+        return Optional.of(new TardisInteriorPlot(x, z));
+    }
+
+    /**
+     * Calculates the ID of the tardis given the X and Z coordinates within the interior plot.
+     * @param x the x coordinate from any location inside the plot.
+     * @param z the z coordinate from any location inside the plot.
+     * @return An optional of the tardis ID. Empty if x or z are outside the bounds of plots.
+     */
+    public static Optional<Integer> calculateTardisIDbyLoc(int x, int z) {
+        if (x < ZERO_COORDINATE_OFFSET || z < ZERO_COORDINATE_OFFSET
+                || x >= PLOT_END_XZ || z >= PLOT_END_XZ) return Optional.empty();
+        x += ZERO_COORDINATE_OFFSET;
+        z += ZERO_COORDINATE_OFFSET;
+        int row = (x / PLOT_SIZE);
+        int col = (z / PLOT_SIZE);
+        int tardisID = row * TARDISES_PER_ROW + col;
+        return Optional.of(tardisID);
     }
 
     private static boolean generateInteriorWorld() {
