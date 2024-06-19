@@ -56,9 +56,7 @@ public class Tardis {
 
     public void spawnTardis(Location where) {
         currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
-        //currentModelDoor = TardisPlugin.spawnModel(where.clone().add(0.5, 0, 0), TardisModelType.TARDIS_OUTER_DOOR, false);
-        //TardisPlugin.singleton.tardisesByEntityUUID.put(currentModelDoor.getUniqueId(), this);
-        TardisPlugin.singleton.tardisesByEntityUUID.put(currentModelTardis.getUniqueId(), this);
+        bindCurrentModelTardis(currentModelTardis.getUniqueId(), false);
     }
 
     public void despawnTardis() {
@@ -73,8 +71,12 @@ public class Tardis {
     }
     
     void bindCurrentModelTardis(UUID armorStandUUID) {
+        bindCurrentModelTardis(armorStandUUID, true);
+    }
+    void bindCurrentModelTardis(UUID armorStandUUID, boolean overrideModel) {
         if (armorStandUUID == null) return;
-        this.currentModelTardis = (ArmorStand) Bukkit.getEntity(armorStandUUID);
+        if (overrideModel) this.currentModelTardis = (ArmorStand) Bukkit.getEntity(armorStandUUID);
+        TardisPlugin.singleton.tardisesByEntityUUID.put(armorStandUUID, this);
         // Todo if the model data suggests disappearing animation, remove and do not bind
         // Todo if the model data suggests appearing animation, just set the tardis there.
     }

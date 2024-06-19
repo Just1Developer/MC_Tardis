@@ -6,54 +6,53 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+
+import java.util.UUID;
 
 public class TardisEvents implements Listener {
+    
+    @EventHandler
+    public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
+        Bukkit.broadcastMessage("Click event triggered");
+        Entity entity = e.getRightClicked();
+        Bukkit.broadcastMessage("Interact 1");
+        if (!isTardisComponent(entity)) return;
+        Bukkit.broadcastMessage("Interact 2");
+        
+        Tardis tardis = TardisPlugin.getTardisByEntityUUID(entity.getUniqueId());
+        Bukkit.broadcastMessage("§cTardis: " + tardis);
+        Bukkit.broadcastMessage("§cContains: " + TardisPlugin.singleton.tardisesByEntityUUID.containsKey(entity.getUniqueId()));
+        Bukkit.broadcastMessage("§cSize: " + TardisPlugin.singleton.tardisesByEntityUUID.size());
+        for (UUID uuid : TardisPlugin.singleton.tardisesByEntityUUID.keySet()) {
+            Bukkit.broadcastMessage("§9UUID: " + uuid);
+        }
+        if (tardis == null) return;
+        e.setCancelled(true);   // Event would probably be change equipment
+        Bukkit.broadcastMessage("Interact 3");
 
-    public TardisEvents() {
-        System.out.println("Hello World from Tardis Event Class!");
+        tardis.enter(e.getPlayer());
+        Bukkit.broadcastMessage("Interact 4 (entered)");
     }
     
     @EventHandler
-    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        Entity e = event.getRightClicked();
-        Bukkit.broadcastMessage("Interact 1");
-        if (e.getType() != EntityType.ARMOR_STAND) return;
-        Bukkit.broadcastMessage("Interact 2");
-        // Check if tardis door:
-        if (e.getCustomName() == null) return;
-        Bukkit.broadcastMessage("Interact 3");
-        if (!e.getCustomName().startsWith("tardis")) return;
-        Bukkit.broadcastMessage("Interact 4");
-        Tardis tardis = TardisPlugin.getTardisByEntityUUID(e.getUniqueId());
-        if (tardis == null) return;
-        Bukkit.broadcastMessage("Interact 5");
-
-        tardis.enter(event.getPlayer());
-        Bukkit.broadcastMessage("Interact 6 (entered)");
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
+        Bukkit.broadcastMessage("Damage event triggered");
+        Entity entity = e.getEntity();
+        if (!isTardisComponent(entity)) return;
+        e.setCancelled(true);
+        Bukkit.broadcastMessage("Tardis is immortal");
     }
     
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        Bukkit.broadcastMessage("Interact 0");
-        if (event.getAction() != Action.RIGHT_CLICK_AIR) return;
-        Entity e = event.getPlayer();   // Todo just testing here, this is not a bug
-        Bukkit.broadcastMessage("Interact 1");
-        if (e.getType() != EntityType.ARMOR_STAND) return;
-        Bukkit.broadcastMessage("Interact 2");
+    private static boolean isTardisComponent(Entity entity) {
+        Bukkit.broadcastMessage("§eCheck: Type: " + entity.getType());
+        if (entity.getType() != EntityType.ARMOR_STAND) return false;
         // Check if tardis door:
-        if (e.getCustomName() == null) return;
-        Bukkit.broadcastMessage("Interact 3");
-        if (!e.getCustomName().startsWith("tardis")) return;
-        Bukkit.broadcastMessage("Interact 4");
-        Tardis tardis = TardisPlugin.getTardisByEntityUUID(e.getUniqueId());
-        if (tardis == null) return;
-        Bukkit.broadcastMessage("Interact 5");
-
-        tardis.enter(event.getPlayer());
-        Bukkit.broadcastMessage("Interact 6 (entered)");
+        Bukkit.broadcastMessage("§eCheck: hasCustomName: " + (entity.getCustomName() != null));
+        if (entity.getCustomName() == null) return false;
+        Bukkit.broadcastMessage("§eCheck: customName: " + entity.getCustomName() + " - condition: " + entity.getCustomName().startsWith("tardis"));
+        return entity.getCustomName().startsWith("tardis");
     }
 
 }

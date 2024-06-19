@@ -36,7 +36,8 @@ public class TardisFiles {
         cfg.set("owner", tardis.getOwnerUUIDString());
         cfg.set("uuid", tardis.getTardisUUIDString());
         cfg.set("outer-shell", tardis.getOuterShellDesignIndex());
-        cfg.set("presence", tardis.getCurrentModelTardisUUID().toString());
+        final UUID modelUUID = tardis.getCurrentModelTardisUUID();
+        cfg.set("presence", modelUUID == null ? "" : modelUUID.toString());
 
         try {
             cfg.save(file);

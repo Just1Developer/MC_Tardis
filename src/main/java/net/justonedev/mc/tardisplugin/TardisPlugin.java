@@ -69,7 +69,8 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         Location loc = fixLocation ? new Location(_loc.getWorld(), _loc.getBlockX() + 0.5, _loc.getBlockY(), _loc.getBlockZ() + 0.5, 0, 0) : _loc;
         assert loc.getWorld() != null;
         ArmorStand armorStand = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);
-        armorStand.setInvisible(modelType.baseMaterial != Material.AIR);      // Todo temporary while we test that it works
+        // Since the tardis is hiding it completely and we need it visible for interaction, leave it visible
+        armorStand.setInvisible(false);
         armorStand.setInvulnerable(true);
         armorStand.setBasePlate(false);
         armorStand.setGravity(false);
@@ -91,6 +92,9 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             assert armorStand.getEquipment() != null;
             armorStand.getEquipment().setHelmet(itemModel);
         }
+        armorStand.setCanPickupItems(false);
+        armorStand.setPersistent(true); // on by default anyway
+        armorStand.setRemoveWhenFarAway(false);
 
         return armorStand;
     }
