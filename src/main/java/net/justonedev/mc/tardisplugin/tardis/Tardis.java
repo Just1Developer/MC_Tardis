@@ -55,12 +55,14 @@ public class Tardis {
 
     public void spawnTardis(Location where) {
         currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
-        currentModelDoor = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_DOOR);
-        TardisPlugin.singleton.tardisesByEntityUUID.put(currentModelDoor.getUniqueId(), this);
+        currentModelDoor = TardisPlugin.spawnModel(where.clone().add(0.5, 0, 0), TardisModelType.TARDIS_OUTER_DOOR, false);
+        //TardisPlugin.singleton.tardisesByEntityUUID.put(currentModelDoor.getUniqueId(), this);
+        TardisPlugin.singleton.tardisesByEntityUUID.put(currentModelTardis.getUniqueId(), this);
     }
 
     public void despawnTardis() {
-        TardisPlugin.singleton.tardisesByEntityUUID.remove(currentModelDoor.getUniqueId());
+        //TardisPlugin.singleton.tardisesByEntityUUID.remove(currentModelDoor.getUniqueId());
+        TardisPlugin.singleton.tardisesByEntityUUID.remove(currentModelTardis.getUniqueId());
         currentModelTardis.remove();
         currentModelDoor.remove();
     }

@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin;
 
 import net.justonedev.mc.tardisplugin.tardis.Tardis;
+import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
 import net.justonedev.mc.tardisplugin.tardis.TardisModelType;
 import net.justonedev.mc.tardisplugin.tardis.TardisWorldGen;
@@ -10,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -44,6 +46,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         singleton = this;
         PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(this, this);
+        pm.registerEvents(new TardisEvents(), this);
         getCommand("spawnmodel").setExecutor(this);
         getCommand("tptardisworld").setExecutor(this);
         getCommand("home").setExecutor(this);
@@ -61,11 +64,14 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     }
     
     public static ArmorStand spawnModel(Location _loc, TardisModelType modelType) {
+        return spawnModel(_loc, modelType, true);
+    }
+    public static ArmorStand spawnModel(Location _loc, TardisModelType modelType, boolean fixLocation) {
         assert _loc.getWorld() != null;
-        Location loc = new Location(_loc.getWorld(), _loc.getBlockX() + 0.5, _loc.getBlockY(), _loc.getBlockZ() + 0.5, 0, 0);
+        Location loc = fixLocation ? new Location(_loc.getWorld(), _loc.getBlockX() + 0.5, _loc.getBlockY(), _loc.getBlockZ() + 0.5, 0, 0) : _loc;
         assert loc.getWorld() != null;
         ArmorStand armorStand = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);
-        armorStand.setInvisible(true);
+        armorStand.setInvisible(modelType.baseMaterial != Material.AIR);      // Todo temporary while we test that it works
         armorStand.setInvulnerable(true);
         armorStand.setBasePlate(false);
         armorStand.setGravity(false);
@@ -89,6 +95,16 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         }
 
         return armorStand;
+    }
+
+    /**
+     * Returns a tardis by the UUID of its exterior door armor stand.
+     * If the entity is not a door, will return null.
+     * @param uuid The uuid of the armor stand.
+     * @return The tardis. null if the armor stand is not a door.
+     */
+    public static Tardis getTardisByEntityUUID(UUID uuid) {
+        return singleton.tardisesByEntityUUID.getOrDefault(uuid, null);
     }
     
     @Override
