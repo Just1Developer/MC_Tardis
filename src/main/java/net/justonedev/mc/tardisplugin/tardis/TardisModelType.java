@@ -1,4 +1,4 @@
-package net.justonedev.mc.tardisplugin;
+package net.justonedev.mc.tardisplugin.tardis;
 
 import org.bukkit.Material;
 

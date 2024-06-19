@@ -1,5 +1,8 @@
 package net.justonedev.mc.tardisplugin;
 
+import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
+import net.justonedev.mc.tardisplugin.tardis.TardisModelType;
+import net.justonedev.mc.tardisplugin.tardis.TardisWorldGen;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -25,6 +28,11 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(this, this);
         getCommand("spawnmodel").setExecutor(this);
+        getCommand("tptardisworld").setExecutor(this);
+        getCommand("home").setExecutor(this);
+
+        TardisFiles.initialize();
+        TardisWorldGen.initialize();
     }
 
     @Override
@@ -61,7 +69,15 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player p = (Player) sender;
-        spawnModel(p.getLocation().clone().add(1, 0, 0), TardisModelType.TARDIS_OUTER_STATIC);
+        if (command.getName().equals("spawnmodel")) {
+            spawnModel(p.getLocation().clone().add(1, 0, 0), TardisModelType.TARDIS_OUTER_STATIC);
+        } else if (command.getName().equals("tptardisworld")) {
+            p.teleport(TardisWorldGen.getInteriorWorld().getSpawnLocation());
+        } else if (command.getName().equals("home")) {
+            Location loc = p.getRespawnLocation();
+            if (loc == null) loc = Bukkit.getWorlds().get(0).getSpawnLocation();
+            p.teleport(loc);
+        }
         return true;
     }
 }
