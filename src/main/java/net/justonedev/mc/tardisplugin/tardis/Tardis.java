@@ -2,6 +2,8 @@ package net.justonedev.mc.tardisplugin.tardis;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
 import org.bukkit.Location;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Player;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -22,6 +24,9 @@ public class Tardis {
     private final int outerShellDesignIndex;
     private final TardisInteriorPlot interiorPlot;
     private final Location spawnLocation;
+
+    private ArmorStand currentModelTardis;
+    private ArmorStand currentModelDoor;
 
     private TardisConsole tardisConsole;
 
@@ -46,6 +51,26 @@ public class Tardis {
         Tardis tardis = new Tardis(owner, uuid, 1, TardisPlugin.singleton.tardises.size());
         tardis.build();
         return tardis;
+    }
+
+    public void spawnTardis(Location where) {
+        currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
+        currentModelDoor = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_DOOR);
+        TardisPlugin.singleton.tardisesByEntityUUID.put(currentModelDoor.getUniqueId(), this);
+    }
+
+    public void despawnTardis() {
+        TardisPlugin.singleton.tardisesByEntityUUID.remove(currentModelDoor.getUniqueId());
+        currentModelTardis.remove();
+        currentModelDoor.remove();
+    }
+
+    /**
+     * Teleports a player into the tardis.
+     * @param player The player.
+     */
+    public void enter(Player player) {
+        player.teleport(spawnLocation);
     }
 
     /**

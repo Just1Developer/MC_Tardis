@@ -6,6 +6,7 @@ import net.justonedev.mc.tardisplugin.tardis.TardisModelType;
 import net.justonedev.mc.tardisplugin.tardis.TardisWorldGen;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 public final class TardisPlugin extends JavaPlugin implements Listener {
 
@@ -34,7 +36,8 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
      * and hope it's fast enough.
      */
     public Map<Integer, Tardis> tardises;
-    
+    public Map<UUID, Tardis> tardisesByEntityUUID;
+
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -45,8 +48,8 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("tptardisworld").setExecutor(this);
         getCommand("home").setExecutor(this);
 
-        //tardises = new TreeMap<>();
         tardises = new HashMap<>();
+        tardisesByEntityUUID = new HashMap<>();
         TardisWorldGen.initialize();
         TardisFiles.initialize();
     }
@@ -57,9 +60,10 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         TardisFiles.saveAll();
     }
     
-    public static void spawnModel(Location _loc, TardisModelType modelType) {
+    public static ArmorStand spawnModel(Location _loc, TardisModelType modelType) {
         assert _loc.getWorld() != null;
         Location loc = new Location(_loc.getWorld(), _loc.getBlockX() + 0.5, _loc.getBlockY(), _loc.getBlockZ() + 0.5, 0, 0);
+        assert loc.getWorld() != null;
         ArmorStand armorStand = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);
         armorStand.setInvisible(true);
         armorStand.setInvulnerable(true);
@@ -72,24 +76,27 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         armorStand.setGlowing(modelType.shouldGlow);
         armorStand.setSmall(modelType.isBaby);
         armorStand.setCollidable(true);
-        
-        // Set a random wool color on the armor stand's head
-        ItemStack woolHead = new ItemStack(modelType.baseMaterial);
-        ItemMeta woolHeadMeta = woolHead.getItemMeta();
-		assert woolHeadMeta != null;
-		woolHeadMeta.setCustomModelData(modelType.customModelData);
-        woolHead.setItemMeta(woolHeadMeta);
-        
-        assert armorStand.getEquipment() != null;
-        armorStand.getEquipment().setHelmet(woolHead);
+
+        if (modelType.baseMaterial != Material.AIR) {
+            ItemStack itemModel = new ItemStack(modelType.baseMaterial);
+            ItemMeta woolHeadMeta = itemModel.getItemMeta();
+            assert woolHeadMeta != null;
+            woolHeadMeta.setCustomModelData(modelType.customModelData);
+            itemModel.setItemMeta(woolHeadMeta);
+
+            assert armorStand.getEquipment() != null;
+            armorStand.getEquipment().setHelmet(itemModel);
+        }
+
+        return armorStand;
     }
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player p = (Player) sender;
         if (command.getName().equals("spawnmodel")) {
-            spawnModel(p.getLocation().clone().add(1, 0, 0), TardisModelType.TARDIS_OUTER_STATIC);
-            Tardis.createNewTardis(p.getUniqueId());
+            Tardis t = Tardis.createNewTardis(p.getUniqueId());
+            t.spawnTardis(p.getLocation().clone().add(1, 0, 0));
         } else if (command.getName().equals("tptardisworld")) {
             p.teleport(TardisWorldGen.getInteriorWorld().getSpawnLocation());
         } else if (command.getName().equals("home")) {

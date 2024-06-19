@@ -34,7 +34,7 @@ public class TardisConsole {
         absoluteLocation.clone().add(-1, -2, -1).getBlock().setType(Material.ACACIA_WOOD);
         absoluteLocation.clone().add(1, -2, -1).getBlock().setType(Material.ACACIA_WOOD);
         Bukkit.broadcastMessage("§e[TardisConsole:26] spawned model @ " + absoluteLocation);
-        Bukkit.broadcastMessage("§9 " + absoluteLocation.getBlockX() + "  -  " + absoluteLocation.getBlockY() + "  -  " + absoluteLocation.getBlockZ());
+        Bukkit.broadcastMessage("§f " + absoluteLocation.getBlockX() + "  -  " + absoluteLocation.getBlockY() + "  -  " + absoluteLocation.getBlockZ());
     }
 
 }
