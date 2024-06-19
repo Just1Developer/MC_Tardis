@@ -1,15 +1,14 @@
 package net.justonedev.mc.tardisplugin.tardis;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
 import java.util.Optional;
@@ -26,68 +25,22 @@ public class TardisEvents implements Listener {
         String name = entity.getCustomName();
         assert name != null;
         
-        Bukkit.broadcastMessage("§eName: " + entity.getCustomName());
         if (name.contains(TardisModelType.TARDIS_OUTER_STATIC.modelName)) {
-            Bukkit.broadcastMessage("§cTardis: Entering Door");
             Tardis tardis = TardisPlugin.getTardisByEntityUUID(entity.getUniqueId());
             if (tardis == null) return;
             
             // This way, we can later do entry key validation and more
             tardis.enter(e.getPlayer());
         } else if (name.contains(TardisModelType.TARDIS_INNER_DOOR.modelName)) {
-            Bukkit.broadcastMessage("§cTardis: Exiting Door");
+            // Check: Is there a tardis to enter
             Tardis tardis = TardisPlugin.getTardisByAnyPlotLocation(entity.getLocation());
-            
-            Bukkit.broadcastMessage("§eID: " + TardisWorldGen.calculateTardisIDbyLoc(entity.getLocation().getBlockX(), entity.getLocation().getBlockZ()));
-            Bukkit.broadcastMessage("§eTardis: " + tardis);
-            for (int key : TardisPlugin.singleton.tardises.keySet()) {
-                Bukkit.broadcastMessage("§bKey: " + key);
-            }
-            
             if (tardis == null) return;
             Optional<ArmorStand> model = tardis.getCurrentModelTardis();
-            Bukkit.broadcastMessage("§cui");
-            
             if (model.isEmpty()) return;
-            Bukkit.broadcastMessage("§cui2");
+            
             // Todo perhaps later modify location when we have set way to determine and set facing of the tardis
             e.getPlayer().teleport(model.get().getLocation());
         }
-    }
-    
-    @EventHandler
-    public void debugMove(PlayerMoveEvent e) {
-        
-        Tardis t = TardisPlugin.singleton.tardises.getOrDefault(0, null);
-        if (t == null) return;
-        Vector v = t.getCurrentModelDirectionVector();
-        if (dotProduct(v, v) == 0) {
-            Bukkit.broadcastMessage("v is nullvector");
-            return;
-        }
-        
-        // Vector (0, 0, -1) should return around 180° or -180°
-        // Vector (0, 0, 1) should return around 0°
-        // Vector (1, 0, 0) should return around -90°
-        // Vector (-1, 0, 0) should return around 90°
-        //Bukkit.broadcastMessage("§eYaw: " + e.getPlayer().getLocation().getYaw() + " Y: " + (Math.toDegrees((Math.cos(v.getX()) + Math.sin(v.getZ()))) - 0) + " Y: " + (2 * Math.PI * (Math.cos(v.getX()) + Math.sin(v.getZ())) - 180));
-        //Bukkit.broadcastMessage("Dot product: " + dotProduct(v, e.getPlayer().getLocation().getDirection()));
-        //Bukkit.broadcastMessage("Angle: " + calculateAngle(v, e.getPlayer().getLocation().getDirection()));
-        
-        // From polar coordinates, we know r=1
-        // x = cos(alpha)
-        // z = sin(alpha)
-        // => Alpha = arccos(x) = arcsin(z)
-        
-        // We assume v is normalized such that |v| = 1
-        //for (Vector v2 : new Vector[] { new Vector(0, 0, -1), new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(-1, 0, 0) }) {
-        //    Bukkit.broadcastMessage("vect: " + v2 + " angle: " + calculateAngle(v, v2) + " arccos: " + (2 * Math.PI * Math.acos(v2.getX()) - 180) + " arcsin: " + (2 * Math.PI * Math.asin(v2.getZ()) - 180));
-        //}
-        
-        Vector pv = e.getPlayer().getLocation().getDirection();
-        if (isWithinDoorAngleTolerance(pv, v)) Bukkit.broadcastMessage("§aYES");
-        else Bukkit.broadcastMessage("§cNO");
-        
     }
     
     @EventHandler
@@ -139,6 +92,24 @@ public class TardisEvents implements Listener {
             angle = -angle; // adjust the angle to reflect direction
         }
         return Math.toDegrees(angle);
+    }
+    
+    /**
+     * Determines whether the player is facing the direction of the entity within an acceptable angular tolerance.<br/>
+     * <br/>
+     * This method is a high-level abstraction used specifically to check if the player is sufficiently
+     * facing towards an entity, such as a door. It retrieves the directional vectors of both the player
+     * and the entity from their current locations and passes these vectors to the
+     * {@link #isWithinDoorAngleTolerance(Vector, Vector)} method. The check determines if the
+     * directed angle between the player and the entity falls within a predefined tolerance,
+     * allowing for context-specific interactions when the player is facing the entity correctly.
+     *
+     * @param player The player whose facing direction is to be checked, not null.
+     * @param tardis The entity (e.g., a door) that the player should be facing, not null.
+     * @return true if the player's direction towards the entity is within the specified tolerance, otherwise false.
+     */
+    private boolean isWithinDoorAngleTolerance(Player player, Entity tardis) {
+        return isWithinDoorAngleTolerance(player.getLocation().getDirection(), tardis.getLocation().getDirection());
     }
     
     /**
