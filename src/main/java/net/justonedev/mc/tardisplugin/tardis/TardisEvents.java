@@ -16,6 +16,8 @@ import java.util.Optional;
 
 public class TardisEvents implements Listener {
     
+    private static final double DOOR_ANGLE_OK_THRESHOLD = 70;
+    
     @EventHandler
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
         Entity entity = e.getRightClicked();
@@ -68,7 +70,7 @@ public class TardisEvents implements Listener {
         // Vector (0, 0, 1) should return around 0°
         // Vector (1, 0, 0) should return around -90°
         // Vector (-1, 0, 0) should return around 90°
-        Bukkit.broadcastMessage("§eYaw: " + e.getPlayer().getLocation().getYaw() + " Y: " + (Math.toDegrees((Math.cos(v.getX()) + Math.sin(v.getZ()))) - 0) + " Y: " + (2 * Math.PI * (Math.cos(v.getX()) + Math.sin(v.getZ())) - 180));
+        //Bukkit.broadcastMessage("§eYaw: " + e.getPlayer().getLocation().getYaw() + " Y: " + (Math.toDegrees((Math.cos(v.getX()) + Math.sin(v.getZ()))) - 0) + " Y: " + (2 * Math.PI * (Math.cos(v.getX()) + Math.sin(v.getZ())) - 180));
         //Bukkit.broadcastMessage("Dot product: " + dotProduct(v, e.getPlayer().getLocation().getDirection()));
         //Bukkit.broadcastMessage("Angle: " + calculateAngle(v, e.getPlayer().getLocation().getDirection()));
         
@@ -77,9 +79,14 @@ public class TardisEvents implements Listener {
         // z = sin(alpha)
         // => Alpha = arccos(x) = arcsin(z)
         
-        for (Vector v2 : new Vector[] { new Vector(0, 0, -1), new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(-1, 0, 0) }) {
-            Bukkit.broadcastMessage("vect: " + v2 + " arccos: " + (2 * Math.PI * Math.acos(v2.getX()) - 180) + " arcsin: " + (2 * Math.PI * Math.asin(v2.getZ()) - 180));
-        }
+        // We assume v is normalized such that |v| = 1
+        //for (Vector v2 : new Vector[] { new Vector(0, 0, -1), new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(-1, 0, 0) }) {
+        //    Bukkit.broadcastMessage("vect: " + v2 + " angle: " + calculateAngle(v, v2) + " arccos: " + (2 * Math.PI * Math.acos(v2.getX()) - 180) + " arcsin: " + (2 * Math.PI * Math.asin(v2.getZ()) - 180));
+        //}
+        
+        Vector pv = e.getPlayer().getLocation().getDirection();
+        if (isWithinDoorAngleTolerance(pv, v)) Bukkit.broadcastMessage("§aYES");
+        else Bukkit.broadcastMessage("§cNO");
         
     }
     
@@ -89,6 +96,8 @@ public class TardisEvents implements Listener {
         if (!isTardisComponent(entity)) return;
         e.setCancelled(true);
     }
+    
+    //region Angle-Helpers
     
     /**
      * Builds the dot product between two 2D-Vectors (considers only x and z).
@@ -100,14 +109,58 @@ public class TardisEvents implements Listener {
         return v1.getX() * v2.getX() + v1.getZ() * v2.getZ();
     }
     
-    private double calculateAngle(Vector v1, Vector v2) {
-        double dot = dotProduct(v1, v2);
-        double magV1 = Math.sqrt(dotProduct(v1, v1)); // Magnitude of v1
-        double magV2 = Math.sqrt(dotProduct(v2, v2)); // Magnitude of v2
-        double cosTheta = dot / (magV1 * magV2);
-        double angle = Math.acos(cosTheta); // This gives you the angle in radians
-        return Math.toDegrees(angle); // Converts angle to degrees
+    /**
+     * Calculates the determinant of the cross product of two 2D vectors, which is equivalent to the z-component of the cross product in 3D.
+     * @param v1 The first vector.
+     * @param v2 The second vector.
+     * @return the z-component of the cross product.
+     */
+    private double crossProductZ(Vector v1, Vector v2) {
+        return v1.getX() * v2.getZ() - v1.getZ() * v2.getX();
     }
+    
+    /**
+     * Calculates the oriented angle between two vectors.<br/>
+     * <br/>
+     * The method first computes the angle using the arccosine of the dot product
+     * of the vectors divided by the product of their magnitudes, which provides
+     * the smallest angle in radians. It then adjusts the sign of the angle based
+     * on the z-component of the cross product of the two vectors. A negative
+     * z-component indicates that the angle should be negative, reflecting that
+     * the second vector is clockwise relative to the first vector.
+     *
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return the oriented angle in degrees, ranging from -180° to 180°.
+     */
+    private double calculateAngle(Vector v1, Vector v2) {
+        double angle = (Math.acos(dotProduct(v1, v2) / (v1.length() * v2.length())));
+        if (crossProductZ(v1, v2) < 0) {
+            angle = -angle; // adjust the angle to reflect direction
+        }
+        return Math.toDegrees(angle);
+    }
+    
+    /**
+     * Checks if the angle between a player's facing direction and a door's facing direction
+     * is within a specified tolerance.<br/>
+     * <br/>
+     * This method utilizes {@link #calculateAngle(Vector, Vector)} to determine the oriented angle
+     * between the player's vector and the door's vector. It then checks if the absolute value of this
+     * angle is less than or equal to the defined threshold, `DOOR_ANGLE_OK_THRESHOLD`. This threshold
+     * defines the maximum angle deviation allowed for the player to be considered facing the door
+     * directly enough to trigger an interaction or action.
+     *
+     * @param playerVector the vector representing the player's facing direction
+     * @param doorVector the vector representing the door's facing direction
+     * @return true if the absolute angle is within the threshold, false otherwise.
+     */
+    private boolean isWithinDoorAngleTolerance(Vector playerVector, Vector doorVector) {
+        double angle = calculateAngle(playerVector, doorVector);
+        return Math.abs(angle) <= DOOR_ANGLE_OK_THRESHOLD;
+    }
+    
+    //endregion
     
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private static boolean isTardisComponent(Entity entity) {
