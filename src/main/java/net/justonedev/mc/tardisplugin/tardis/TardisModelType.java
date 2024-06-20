@@ -18,8 +18,10 @@ public class TardisModelType {
 	public static final TardisModelType TARDIS_OUTER_ENTER = new TardisModelType(
 			"outer-enter", Material.BEDROCK, TARDIS_OUTER_ENTRY_DATA, false, false);
 	public static final TardisModelType TARDIS_INNER_DOOR = new TardisModelType(
-			"interior-door", Material.BEDROCK, TARDIS_CONSOLE_DATA, false, false);
+			"interior-door", Material.BEDROCK, TARDIS_INNER_EXIT_DATA, false, false);
 	public static final TardisModelType TARDIS_CONSOLE = new TardisModelType(
+			"interior-door", Material.BEDROCK, TARDIS_CONSOLE_DATA, false, false);
+	public static final TardisModelType TARDIS_TIME_ROTOR = new TardisModelType(
 			"interior-console", Material.BEDROCK, TARDIS_TIME_ROTOR_DATA, false, false);
 
 	public final String modelName;

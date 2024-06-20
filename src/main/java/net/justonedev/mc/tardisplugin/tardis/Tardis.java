@@ -3,8 +3,11 @@ package net.justonedev.mc.tardisplugin.tardis;
 import net.justonedev.mc.tardisplugin.TardisPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
 import java.util.Optional;
@@ -46,7 +49,18 @@ public class Tardis {
         spawnLocation = new Location(loc.getWorld(), loc.getBlockX() - 10.5, loc.getY(), loc.getBlockZ() + 0.5, 0, 0);
 
         TardisPlugin.singleton.tardises.put(interiorPlotID, this);
+
+        int[] nums = { 2500, 2501, 2502 };
+        i = 0;
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
+            Bukkit.broadcastMessage("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
+            setShellModelData(nums[i]);
+            Bukkit.broadcastMessage("Model data now: " + getShellModelData());
+            i++;
+            if (i > 2) i = 0;
+        }, 20, 20);
     }
+    int i = 0;
 
     public static Tardis createNewTardis(UUID owner) {
         UUID uuid = UUID.randomUUID();
@@ -58,6 +72,30 @@ public class Tardis {
     public void spawnTardis(Location where) {
         currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
         bindCurrentModelTardis(currentModelTardis.getUniqueId(), false);
+    }
+
+    public void setShellModelData(int modelData) {
+        Optional<ArmorStand> stand = getCurrentModelTardis();
+        if (stand.isEmpty()) return;
+        if (stand.get().getEquipment() == null) return;
+        ItemStack item = stand.get().getEquipment().getHelmet();
+        if (item == null || true) item = new ItemStack(Material.GLASS); // todo temp change to glass
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        meta.setCustomModelData(modelData);
+        item.setItemMeta(meta);
+        stand.get().getEquipment().setHelmet(item);
+    }
+
+    public int getShellModelData() {
+        Optional<ArmorStand> stand = getCurrentModelTardis();
+        if (stand.isEmpty()) return -1;
+        if (stand.get().getEquipment() == null) return -1;
+        ItemStack item = stand.get().getEquipment().getHelmet();
+        if (item == null) item = new ItemStack(Material.BEDROCK);
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return -1;
+        return meta.hasCustomModelData() ? meta.getCustomModelData() : 0;
     }
 
     public void despawnTardis() {
