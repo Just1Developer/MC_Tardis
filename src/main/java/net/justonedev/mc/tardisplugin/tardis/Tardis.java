@@ -49,16 +49,6 @@ public class Tardis {
         spawnLocation = new Location(loc.getWorld(), loc.getBlockX() - 10.5, loc.getY(), loc.getBlockZ() + 0.5, 0, 0);
 
         TardisPlugin.singleton.tardises.put(interiorPlotID, this);
-
-        int[] nums = { 2500, 2501, 2502 };
-        i = 0;
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
-            Bukkit.broadcastMessage("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
-            setShellModelData(nums[i]);
-            Bukkit.broadcastMessage("Model data now: " + getShellModelData());
-            i++;
-            if (i > 2) i = 0;
-        }, 20, 20);
     }
     int i = 0;
 
@@ -79,7 +69,7 @@ public class Tardis {
         if (stand.isEmpty()) return;
         if (stand.get().getEquipment() == null) return;
         ItemStack item = stand.get().getEquipment().getHelmet();
-        if (item == null || true) item = new ItemStack(Material.GLASS); // todo temp change to glass
+        if (item == null || true) item = new ItemStack(Material.BEDROCK); // todo temp change to glass
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
         meta.setCustomModelData(modelData);
@@ -136,6 +126,25 @@ public class Tardis {
         TardisPlugin.singleton.tardisesByEntityUUID.put(armorStandUUID, this);
         // Todo if the model data suggests disappearing animation, remove and do not bind
         // Todo if the model data suggests appearing animation, just set the tardis there.
+        
+        
+        int[] nums = { 2500, 2501, 2502, 2503, 2504 };
+        i = 0;
+        Bukkit.broadcastMessage("§5Current model: " + currentModelTardis);
+        System.out.println("§5Current model: " + currentModelTardis);
+        if (this.currentModelTardis != null) {
+            Bukkit.broadcastMessage("§cStarting scheduler");
+            System.out.println("§cStarting scheduler");
+            Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
+                Bukkit.broadcastMessage("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
+                System.out.println("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
+                setShellModelData(nums[i]);
+                Bukkit.broadcastMessage("Model data now: " + getShellModelData());
+                System.out.println("Model data now: " + getShellModelData());
+                i++;
+                if (i >= nums.length) i = 0;
+            }, 20, 20);
+        }
     }
 
     /**
