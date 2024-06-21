@@ -142,41 +142,4 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         }
         return true;
     }
-
-    // Some testing for someone else:
-
-    @EventHandler
-    public void onJoinTest(PlayerJoinEvent e) {
-        Player p = e.getPlayer();
-        Sheep sheep = (Sheep) p.getWorld().spawnEntity(p.getLocation(), EntityType.SHEEP);
-        sheep.setCustomName("Dinnerbone");
-        sheep.setCustomNameVisible(false);
-        // Start Foll
-        sheep.setLeashHolder(p);
-        new EntityFollower(sheep, p, p.getWalkSpeed()).runTaskTimer(this, 1L, 3L);
-    }
-
-    static class EntityFollower extends BukkitRunnable {
-        private final LivingEntity entity;
-        private final Player player;
-        private final double speed;
-
-        public EntityFollower(LivingEntity entity, Player player, double speed) {
-            this.entity = entity;
-            this.player = player;
-            this.speed = speed;
-        }
-
-        @Override
-        public void run() {
-            if (player == null || !player.isOnline() || entity.isDead()) {
-                this.cancel();
-                return;
-            }
-
-            // Calculate direction from entity to player
-            Vector direction = player.getLocation().toVector().subtract(entity.getLocation().toVector()).normalize();
-            entity.setVelocity(direction.multiply(speed)); // Set the entity's velocity to move towards the player
-        }
-    }
 }
