@@ -133,5 +133,13 @@ public class QuaderDimensions {
 	int getValueHash() {
 		return Objects.hash(VALUE1, VALUE2, VALUE3);
 	}
+	
+	QuaderDimensions copy() {
+		return new QuaderDimensions(VALUE1, VALUE2, VALUE3, ORIENTATION_KEY);
+	}
+	
+	QuaderDimensions copy(byte newOrientation) {
+		return new QuaderDimensions(VALUE1, VALUE2, VALUE3, newOrientation);
+	}
 
 }

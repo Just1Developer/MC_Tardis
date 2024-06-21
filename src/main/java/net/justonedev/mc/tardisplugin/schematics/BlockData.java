@@ -18,6 +18,7 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.Waterlogged;
+import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -113,14 +114,42 @@ public class BlockData {
         }
     }
     
-    final Location location;
+    final Vector location;
     final Material material;
     HashMap<Integer, Integer> Attributes;
     
     public BlockData(Block block) {
-        location = block.getLocation();
-        material = block.getType();
+        this.location = new Vector(block.getLocation().getBlockX(), block.getLocation().getBlockY(), block.getLocation().getBlockZ());
+        this.material = block.getType();
         applyAttributes(block);
+    }
+    
+    public BlockData(Material material, Location location, Map<Integer, Integer> attributes) {
+        this.material = material;
+        this.location = new Vector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        Attributes = new HashMap<>();
+        Attributes.putAll(attributes);
+    }
+    
+    public BlockData(Material material, Vector location, Map<Integer, Integer> attributes) {
+        this.material = material;
+        this.location = location.clone();
+        Attributes = new HashMap<>();
+        Attributes.putAll(attributes);
+    }
+    
+    public BlockData(Material material, Map<Integer, Integer> attributes) {
+        this.material = material;
+        this.location = new Vector(0, 0, 0);
+        Attributes = new HashMap<>();
+        Attributes.putAll(attributes);
+    }
+    
+    public BlockData(Material material, int x, int y, int z, Map<Integer, Integer> attributes) {
+        this.material = material;
+        this.location = new Vector(x, y, z);
+        Attributes = new HashMap<>();
+        Attributes.putAll(attributes);
     }
     
     private void applyAttributes(Block block) {

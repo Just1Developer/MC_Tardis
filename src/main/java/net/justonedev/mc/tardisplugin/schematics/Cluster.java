@@ -211,6 +211,8 @@ public class Cluster {
             }
         }
         
+        List<Quader> quaders = new ArrayList<>();
+        
         while (true) {
             Pair<Integer, Integer> readNumberResult;
             // Read different quader shapes here
@@ -229,7 +231,6 @@ public class Cluster {
             
             QuaderDimensions dimensions = QuaderDimensions.ofSorted(bounds1, bounds2, bounds3);
             
-            boolean wasFirstStatement = true;
             while (true) {
                 // read single quaders with the same shape here.
                 Map<Integer, Integer> attributeValues = new HashMap<>();
@@ -238,7 +239,6 @@ public class Cluster {
                 index = readNumberResult.value1;
                 int x = readNumberResult.value2;
                 if (x == TERMINATOR_BYTE) break;
-                wasFirstStatement = false;
                 
                 readNumberResult = readNumber(index, Math.min(coordBytes, 2), bytes);
                 index = readNumberResult.value1;
@@ -257,11 +257,13 @@ public class Cluster {
                     attributeValues.put(existingAttributes.get(count), attributeValue);
                 }
                 
-                // Now we have
+                // Now we have (the bounds), the coords, the orientation and the attributes.
+                // Time to create a Quader.
+                quaders.add(new Quader(new BlockData(material, x, y, z, attributeValues), dimensions, boundsOR));
             }
-            // Double Terminator Byte
-            if (wasFirstStatement) break;
         }
+        
+        return new Cluster(quaders);
     }
     
     private static Pair<Integer, Integer> readNumber(int currentIndex, int bytes, List<Byte> list) {
