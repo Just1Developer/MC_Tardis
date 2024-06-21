@@ -69,7 +69,7 @@ public class Tardis {
         if (stand.isEmpty()) return;
         if (stand.get().getEquipment() == null) return;
         ItemStack item = stand.get().getEquipment().getHelmet();
-        if (item == null || true) item = new ItemStack(Material.BEDROCK); // todo temp change to glass
+        if (item == null || true) item = new ItemStack(Material.WHITE_STAINED_GLASS); // todo temp change to glass
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
         meta.setCustomModelData(modelData);

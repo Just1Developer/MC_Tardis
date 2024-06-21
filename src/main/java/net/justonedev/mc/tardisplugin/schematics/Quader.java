@@ -1,13 +1,12 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
-import org.bukkit.Material;
-
 public class Quader {
 
     final BlockData quaderData;
+    QuaderDimensions quaderDimensions;
 
-    public Quader() {
-        quaderData = new BlockData();
+    public Quader(BlockData blockData) {
+        quaderData = blockData; // I think reference is fine since it's read-only everywhere
     }
 
 }
