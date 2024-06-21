@@ -152,6 +152,10 @@ public class BlockData {
         Attributes.putAll(attributes);
     }
     
+    public BlockData copy(Vector location) {
+        return new BlockData(material, location.clone(), Attributes);
+    }
+    
     private void applyAttributes(Block block) {
         Attributes = new HashMap<>();
         org.bukkit.block.data.BlockData data = block.getBlockData();

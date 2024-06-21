@@ -1,5 +1,6 @@
 package net.justonedev.mc.tardisplugin;
 
+import net.justonedev.mc.tardisplugin.schematics.SchematicFactory;
 import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
@@ -12,20 +13,15 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Sheep;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.EulerAngle;
-import org.bukkit.util.Vector;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +49,8 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("spawnmodel").setExecutor(this);
         getCommand("tptardisworld").setExecutor(this);
         getCommand("home").setExecutor(this);
+        getCommand("schematic").setExecutor(this);
+        getCommand("buildschematic").setExecutor(this);
 
         tardises = new HashMap<>();
         tardisesByEntityUUID = new HashMap<>();
@@ -139,6 +137,16 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             Location loc = p.getRespawnLocation();
             if (loc == null) loc = Bukkit.getWorlds().get(0).getSpawnLocation();
             p.teleport(loc);
+        } else if (command.getName().equals("schematic")) {
+            String name = args[0];
+            Location firstLoc = new Location(p.getWorld(), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+            Location secondLoc = new Location(p.getWorld(), Integer.parseInt(args[4]), Integer.parseInt(args[5]), Integer.parseInt(args[6]));
+            boolean captureAir = false;
+            if (args.length > 7) captureAir = Boolean.parseBoolean(args[7]);
+            new SchematicFactory(name, firstLoc, secondLoc, captureAir).writeToFile();
+        } else if (command.getName().equals("buildschematic")) {
+            File file = new File(getDataFolder() + "schematics/", args[0] + ".schem");
+            p.sendMessage(file.getAbsolutePath() + " TODO");
         }
         return true;
     }

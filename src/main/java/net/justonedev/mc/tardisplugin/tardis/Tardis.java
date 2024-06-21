@@ -130,17 +130,17 @@ public class Tardis {
         
         int[] nums = { 2500, 2501, 2502, 2503, 2504 };
         i = 0;
-        Bukkit.broadcastMessage("§5Current model: " + currentModelTardis);
-        System.out.println("§5Current model: " + currentModelTardis);
+        //Bukkit.broadcastMessage("§5Current model: " + currentModelTardis);
+        //System.out.println("§5Current model: " + currentModelTardis);
         if (this.currentModelTardis != null) {
             Bukkit.broadcastMessage("§cStarting scheduler");
             System.out.println("§cStarting scheduler");
             Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
-                Bukkit.broadcastMessage("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
-                System.out.println("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
+                //Bukkit.broadcastMessage("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
+                //System.out.println("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
                 setShellModelData(nums[i]);
-                Bukkit.broadcastMessage("Model data now: " + getShellModelData());
-                System.out.println("Model data now: " + getShellModelData());
+                //Bukkit.broadcastMessage("Model data now: " + getShellModelData());
+                //System.out.println("Model data now: " + getShellModelData());
                 i++;
                 if (i >= nums.length) i = 0;
             }, 20, 20);
