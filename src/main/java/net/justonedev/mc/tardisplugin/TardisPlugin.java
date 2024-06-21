@@ -12,13 +12,19 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Sheep;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.EulerAngle;
+import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -135,5 +141,42 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             p.teleport(loc);
         }
         return true;
+    }
+
+    // Some testing for someone else:
+
+    @EventHandler
+    public void onJoinTest(PlayerJoinEvent e) {
+        Player p = e.getPlayer();
+        Sheep sheep = (Sheep) p.getWorld().spawnEntity(p.getLocation(), EntityType.SHEEP);
+        sheep.setCustomName("Dinnerbone");
+        sheep.setCustomNameVisible(false);
+        // Start Foll
+        sheep.setLeashHolder(p);
+        new EntityFollower(sheep, p, p.getWalkSpeed()).runTaskTimer(this, 1L, 3L);
+    }
+
+    static class EntityFollower extends BukkitRunnable {
+        private final LivingEntity entity;
+        private final Player player;
+        private final double speed;
+
+        public EntityFollower(LivingEntity entity, Player player, double speed) {
+            this.entity = entity;
+            this.player = player;
+            this.speed = speed;
+        }
+
+        @Override
+        public void run() {
+            if (player == null || !player.isOnline() || entity.isDead()) {
+                this.cancel();
+                return;
+            }
+
+            // Calculate direction from entity to player
+            Vector direction = player.getLocation().toVector().subtract(entity.getLocation().toVector()).normalize();
+            entity.setVelocity(direction.multiply(speed)); // Set the entity's velocity to move towards the player
+        }
     }
 }
