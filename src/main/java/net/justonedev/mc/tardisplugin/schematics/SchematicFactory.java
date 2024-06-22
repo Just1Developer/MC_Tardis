@@ -45,32 +45,15 @@ public class SchematicFactory {
 				Math.max(_startPoint.getBlockY(), _endPoint.getBlockY()) - minLocation.getBlockY() + 1,
 				Math.max(_startPoint.getBlockZ(), _endPoint.getBlockZ()) - minLocation.getBlockZ() + 1
 		);
-		Bukkit.broadcastMessage(String.format("Min Location: (%d, %d, %d)", minLocation.getBlockX(), minLocation.getBlockY(), minLocation.getBlockZ()));
-		Bukkit.broadcastMessage(String.format("Bounds: %d, %d, %d", bounds.getBlockX(), bounds.getBlockY(), bounds.getBlockZ()));
-		int amt = 0;
 		blockData = scanEnvironment(minLocation, bounds);
-		for (var list : blockData.values()) amt += list.size();
-		Bukkit.broadcastMessage("Distinct materials: " + blockData.size());
-		Bukkit.broadcastMessage("Blocks: " + amt);
-		
 		structureCorners = findCorners(blockData);
-		amt = 0;
-		for (var list : structureCorners.values()) amt += list.size();
-		Bukkit.broadcastMessage("Corners: " + amt);
-		
 		allQuaders = findAllQuaders(blockData, structureCorners);
-		amt = 0;
-		for (var list : allQuaders.values()) amt += list.size();
-		Bukkit.broadcastMessage("All Quaders: " + amt);
 		
-		for (var list : blockData.values()) amt += list.size();
 		// Make all same quaders into clusters
 		clusters = new ArrayList<>();
 		for (var quaders : allQuaders.values()) {
 			clusters.add(new Cluster(quaders));
 		}
-		
-		Bukkit.broadcastMessage("Clusters: " + clusters.size());
 	}
 	
 	public void writeToFile() {
@@ -87,13 +70,15 @@ public class SchematicFactory {
 		try {
 			schemFile.createNewFile();
 			FileOutputStream fos = new FileOutputStream(schemFile);
+			int byteCount = 0;
 			for (Cluster cluster : clusters) {
 				var bytes = cluster.encode();
-				Bukkit.broadcastMessage("bytes: " + bytes.length + ": " + bytes);
+				byteCount += bytes.length;
 				fos.write(bytes);
 			}
 			fos.flush();
 			fos.close();
+			Bukkit.getLogger().info("Created schematic " + schemFile.getName() + " with " + byteCount + " bytes");
 		} catch (IOException e) {
 			Bukkit.getLogger().severe(String.format("An error occured while trying to create schematic file %s.schem", schematicName));
 			e.printStackTrace();
@@ -108,7 +93,6 @@ public class SchematicFactory {
 			for (int y = 0; y < bounds.getBlockY(); ++y, writeHead.add(0, 1, 0)) {
 				for (int z = 0; z < bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
 					Block b = writeHead.getBlock();
-					Bukkit.broadcastMessage(String.format("§e[%d, %d, %d] Reading block @ (%d, %d, %d), type: %s", x, y, z, b.getLocation().getBlockX(), b.getLocation().getBlockY(), b.getLocation().getBlockZ(), b.getType()));
 					if (b.getType() == Material.AIR && !captureAir) continue;
 					
 					if (blockData.containsKey(b.getType())) {
@@ -234,20 +218,6 @@ public class SchematicFactory {
 						}
 					}
 					// Now we've expanded all we can
-					
-					// Some print debug code:
-					Bukkit.broadcastMessage(String.format("§cWill be constructing quader from: start: (%d, %d, %d) to end: (%d, %d, %d)", start.getBlockX(), start.getBlockY(), start.getBlockZ(), end.getBlockX(), end.getBlockY(), end.getBlockZ()));
-					if (start.getBlockX() == -336 || start.getBlockZ() == -1101) {
-						// This is a failure in the example im testing. The quader isn't fully expanding like it's supposed to
-						Bukkit.broadcastMessage("§eExplorable Axis:");
-						for (Vector visitable : corner.explorableAxis) {
-							Bukkit.broadcastMessage(String.format("Axis: (%d, %d, %d)", visitable.getBlockX(), visitable.getBlockY(), visitable.getBlockZ()));
-						}
-						Bukkit.broadcastMessage("§eExplored Axis:");
-						for (Vector visitable : expanded) {
-							Bukkit.broadcastMessage(String.format("Axis: (%d, %d, %d)", visitable.getBlockX(), visitable.getBlockY(), visitable.getBlockZ()));
-						}
-					}
 					
 					// Let's build a quader
 					Quader quader = new Quader(corner.blockData, start, end);

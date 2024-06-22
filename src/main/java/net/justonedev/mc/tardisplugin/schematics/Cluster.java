@@ -52,11 +52,6 @@ public class Cluster {
         }
         if (!quaders.isEmpty()) material = this.quaders.iterator().next().quaderData.material;
         else material = null;
-        
-        Bukkit.broadcastMessage("§bCreating new Cluster with material " + material + " and " + quaders.size() + " Quaders:");
-        for (var q : quaders) {
-            Bukkit.broadcastMessage("§b>> " + q.toString());
-        }
     }
 
     // First byte: first bit gives format: 0 => 16-bit, 1 => 24-bit
