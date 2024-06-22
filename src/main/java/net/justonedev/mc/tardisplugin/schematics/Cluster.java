@@ -41,17 +41,22 @@ public class Cluster {
     };
 
     Material material;
-    List<Quader> quaders;
+    Set<Quader> quaders;
     Set<Integer> existingAttributes;
 
-    Cluster(List<Quader> quaders) {
+    Cluster(Set<Quader> quaders) {
         existingAttributes = new HashSet<>();
         this.quaders = quaders;
         for (var quader : quaders) {
             existingAttributes.addAll(quader.quaderData.Attributes.keySet());
         }
-        if (!quaders.isEmpty()) material = quaders.get(0).quaderData.material;
+        if (!quaders.isEmpty()) material = this.quaders.iterator().next().quaderData.material;
         else material = null;
+        
+        Bukkit.broadcastMessage("§bCreating new Cluster with material " + material + " and " + quaders.size() + " Quaders:");
+        for (var q : quaders) {
+            Bukkit.broadcastMessage("§b>> " + q.toString());
+        }
     }
 
     // First byte: first bit gives format: 0 => 16-bit, 1 => 24-bit
@@ -211,7 +216,7 @@ public class Cluster {
             }
         }
         
-        List<Quader> quaders = new ArrayList<>();
+        Set<Quader> quaders = new HashSet<>();
         
         while (true) {
             Pair<Integer, Integer> readNumberResult;

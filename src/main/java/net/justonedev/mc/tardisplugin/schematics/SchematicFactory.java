@@ -26,7 +26,7 @@ public class SchematicFactory {
 	public SchematicFactory(String schematicName, Location _startPoint, Location _endPoint, boolean captureAir) {
 		Map<Material, List<BlockData>> blockData;
 		Map<Material, List<StructureCorner>> structureCorners;
-		Map<Material, List<Quader>> allQuaders;
+		Map<Material, Set<Quader>> allQuaders;
 		
 		this.schematicName = schematicName;
 		this.captureAir = captureAir;
@@ -176,8 +176,8 @@ public class SchematicFactory {
 		return structureCorners;
 	}
 	
-	private Map<Material, List<Quader>> findAllQuaders(Map<Material, List<BlockData>> blockData, Map<Material, List<StructureCorner>> structureCorners) {
-		Map<Material, List<Quader>> allQuaders = new HashMap<>();
+	private Map<Material, Set<Quader>> findAllQuaders(Map<Material, List<BlockData>> blockData, Map<Material, List<StructureCorner>> structureCorners) {
+		Map<Material, Set<Quader>> allQuaders = new HashMap<>();
 		// From every corner, just walk.
 		// Go through all the blocks.
 		for (Material mat : blockData.keySet()) {
@@ -224,15 +224,6 @@ public class SchematicFactory {
 							if (negativeExpansion) start.add(currentAxis);
 							else end.add(currentAxis);
 						}
-						// Let's build a quader
-						Quader quader = new Quader(corner.blockData, start, end);
-						if (allQuaders.containsKey(corner.blockData.material)) {
-							allQuaders.get(corner.blockData.material).add(quader);
-						} else {
-							List<Quader> list = new ArrayList<>();
-							list.add(quader);
-							allQuaders.put(corner.blockData.material, list);
-						}
 						
 						// Now choose next axis
 						expanded.add(currentAxis);
@@ -241,6 +232,31 @@ public class SchematicFactory {
 							if (expanded.contains(visitable)) continue;
 							currentAxis = visitable;
 						}
+					}
+					// Now we've expanded all we can
+					
+					// Some print debug code:
+					Bukkit.broadcastMessage(String.format("§cWill be constructing quader from: start: (%d, %d, %d) to end: (%d, %d, %d)", start.getBlockX(), start.getBlockY(), start.getBlockZ(), end.getBlockX(), end.getBlockY(), end.getBlockZ()));
+					if (start.getBlockX() == -336 || start.getBlockZ() == -1101) {
+						// This is a failure in the example im testing. The quader isn't fully expanding like it's supposed to
+						Bukkit.broadcastMessage("§eExplorable Axis:");
+						for (Vector visitable : corner.explorableAxis) {
+							Bukkit.broadcastMessage(String.format("Axis: (%d, %d, %d)", visitable.getBlockX(), visitable.getBlockY(), visitable.getBlockZ()));
+						}
+						Bukkit.broadcastMessage("§eExplored Axis:");
+						for (Vector visitable : expanded) {
+							Bukkit.broadcastMessage(String.format("Axis: (%d, %d, %d)", visitable.getBlockX(), visitable.getBlockY(), visitable.getBlockZ()));
+						}
+					}
+					
+					// Let's build a quader
+					Quader quader = new Quader(corner.blockData, start, end);
+					if (allQuaders.containsKey(corner.blockData.material)) {
+						allQuaders.get(corner.blockData.material).add(quader);
+					} else {
+						Set<Quader> set = new HashSet<>();
+						set.add(quader);
+						allQuaders.put(corner.blockData.material, set);
 					}
 				}
 			}
@@ -305,8 +321,8 @@ public class SchematicFactory {
 		
 		Set<Vector> nextBlocks = new HashSet<>();
 		for (int x = fromX; x <= toX; ++x) {
-			for (int y = fromX; y <= toY; ++y) {
-				for (int z = fromX; z <= toZ; ++z) {
+			for (int y = fromY; y <= toY; ++y) {
+				for (int z = fromZ; z <= toZ; ++z) {
 					nextBlocks.add(new Vector(x, y, z));
 				}
 			}

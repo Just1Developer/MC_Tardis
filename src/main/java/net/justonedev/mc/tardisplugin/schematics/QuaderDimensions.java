@@ -141,5 +141,17 @@ public class QuaderDimensions {
 	QuaderDimensions copy(byte newOrientation) {
 		return new QuaderDimensions(VALUE1, VALUE2, VALUE3, newOrientation);
 	}
-
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		QuaderDimensions that = (QuaderDimensions) o;
+		return VALUE1 == that.VALUE1 && VALUE2 == that.VALUE2 && VALUE3 == that.VALUE3 && ORIENTATION_KEY == that.ORIENTATION_KEY;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(VALUE1, VALUE2, VALUE3, ORIENTATION_KEY);
+	}
 }

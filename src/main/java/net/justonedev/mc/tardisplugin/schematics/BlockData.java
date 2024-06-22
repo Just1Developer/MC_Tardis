@@ -22,6 +22,7 @@ import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class BlockData {
 
@@ -206,5 +207,17 @@ public class BlockData {
     private boolean boolValue(int i) {
         return i != 0;
     }
-
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BlockData blockData = (BlockData) o;
+        return Objects.equals(location, blockData.location) && material == blockData.material && Objects.equals(Attributes, blockData.Attributes);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, material, Attributes);
+    }
 }
