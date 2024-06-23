@@ -56,7 +56,6 @@ public class Cluster {
     }
     
     public void placeInWorld(Location anchorLocation) {
-        Bukkit.broadcastMessage("[Cluster] PlaceInWorld: " + anchorLocation);
         for (var q : quaders) q.placeInWorld(anchorLocation);
     }
 

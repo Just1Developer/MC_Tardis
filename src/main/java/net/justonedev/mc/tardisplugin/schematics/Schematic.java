@@ -23,8 +23,12 @@ public class Schematic {
 	}
 	
 	public void placeInWorld(Location where) {
-		Bukkit.broadcastMessage("[Schematic] PlaceInWorld: " + where);
 		for (var cluster : clusters) cluster.placeInWorld(where);
+		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
+				where.getWorld() == null ? "unknown" : where.getWorld().getName(),
+				where.getBlockX(),
+				where.getBlockY(),
+				where.getBlockZ()));
 	}
 	
 	private void readFile(File file) {
