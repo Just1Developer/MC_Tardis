@@ -1,5 +1,8 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
 
 import java.util.Objects;
@@ -51,6 +54,39 @@ public class Quader {
     
     public void finalizeQuader() {
         this.locked = true;
+    }
+    
+    public void placeInWorld(Location anchorPosition) {
+        Location anchor = anchorPosition.clone().add(quaderData.location);
+        if (anchor.getWorld() != null) {
+            Bukkit.getLogger().severe("placeInWorld called on Quader, but world was null.");
+            return;
+        }
+        if (!anchor.isWorldLoaded()) {
+            Bukkit.getLogger().severe("placeInWorld called on Quader, but world wasn't loaded. World: " + anchor.getWorld().getName());
+            return;
+        }
+        Location writeHead = anchor.clone();
+        Vector bounds = quaderDimensions.toVectorDimension();
+        var headBlock = writeHead.getBlock();
+        headBlock.setType(quaderData.material);
+        quaderData.cacheBlockDataSetters(headBlock);
+        
+        for (int x = anchor.getBlockX(); x <= bounds.getBlockX(); ++x, writeHead.add(1, 0, 0)) {
+            for (int y = anchor.getBlockY(); y <= bounds.getBlockY(); ++y, writeHead.add(0, 1, 0)) {
+                for (int z = anchor.getBlockZ(); z <= bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
+                    Block b = anchor.getWorld().getBlockAt(writeHead);
+                    applyWholeBlockData(b);
+                }
+                writeHead.setZ(anchor.getBlockZ());
+            }
+            writeHead.setY(anchor.getBlockY());
+        }
+    }
+    
+    private void applyWholeBlockData(Block block) {
+        block.setType(quaderData.material);
+        quaderData.applyAllAttributesTo(block);
     }
     
     @Override

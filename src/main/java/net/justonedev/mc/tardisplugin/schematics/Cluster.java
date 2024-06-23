@@ -2,6 +2,7 @@ package net.justonedev.mc.tardisplugin.schematics;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 
 import java.io.File;
@@ -52,6 +53,10 @@ public class Cluster {
         }
         if (!quaders.isEmpty()) material = this.quaders.iterator().next().quaderData.material;
         else material = null;
+    }
+    
+    public void placeInWorld(Location anchorLocation) {
+        for (var q : quaders) q.placeInWorld(anchorLocation);
     }
 
     // First byte: first bit gives format: 0 => 16-bit, 1 => 24-bit

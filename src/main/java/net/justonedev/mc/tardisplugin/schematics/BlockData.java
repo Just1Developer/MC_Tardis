@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
 import org.bukkit.Axis;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -20,6 +21,8 @@ import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.util.Vector;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +56,9 @@ public class BlockData {
     private static final Map<Axis, Integer> EXPORT_AXIS = new HashMap<>();
     private static final Map<Integer, Bisected.Half> IMPORT_HALVES = new HashMap<>();
     private static final Map<Bisected.Half, Integer> EXPORT_HALVES = new HashMap<>();
+    
+    private static HashMap<Integer, Class<? extends org.bukkit.block.data.BlockData>> BlockDataInterfaceMap;
+    private static HashMap<Integer, String> BlockDataSetterMethods;
     
     public static void init() {
         // Explicit because what if the order changes in values()? then everything is mapped wrong for old models
@@ -113,6 +119,36 @@ public class BlockData {
         for (int key : IMPORT_HALVES.keySet()) {
             EXPORT_HALVES.put(IMPORT_HALVES.get(key), key);
         }
+        
+        BlockDataInterfaceMap = new HashMap<>();
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_WATERLOGGED, Waterlogged.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_DIRECTIONAL, Directional.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_AGE, Ageable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ATTACHED, Attachable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_FACE_ATTACHABLE, FaceAttachable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_HANGING, Hangable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_LEVEL, Levelled.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_POWERED, Powerable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_RAIL, Rail.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_LIT, Lightable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ORIENTATION, Orientable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ROTATION, Rotatable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_BISECTED_HALF, Bisected.class);
+        
+        BlockDataSetterMethods = new HashMap<>();
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_WATERLOGGED, "setWaterlogged");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_DIRECTIONAL, "setFacing");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_AGE, "setAge");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_ATTACHED, "setAttached");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_FACE_ATTACHABLE, "setAttachedFace");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_HANGING, "setHanging");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_LEVEL, "setLevel");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_POWERED, "setPowered");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_RAIL, "setShape");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_LIT, "setLit");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_ORIENTATION, "setAxis");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_ROTATION, "setRotation");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_BISECTED_HALF, "setHalf");
     }
     
     final Vector location;
@@ -122,7 +158,7 @@ public class BlockData {
     public BlockData(Block block) {
         this.location = new Vector(block.getLocation().getBlockX(), block.getLocation().getBlockY(), block.getLocation().getBlockZ());
         this.material = block.getType();
-        applyAttributes(block);
+        loadAttributesFrom(block);
     }
     
     public BlockData(Material material, Location location, Map<Integer, Integer> attributes) {
@@ -157,14 +193,101 @@ public class BlockData {
         return new BlockData(material, location.clone(), Attributes);
     }
     
-    private void applyAttributes(Block block) {
+    HashMap<Integer, Method> cachedDataSetters = null;
+    void cacheBlockDataSetters(Block exampleBlock) {
+        cachedDataSetters = new HashMap<>();
+        for (var attribute : Attributes.entrySet()) {
+            try {
+                var data = castBlockData(BlockDataInterfaceMap.get(attribute.getKey()), exampleBlock.getBlockData());
+                var attributeValue = getRealAttributeValue(attribute.getKey(), attribute.getValue());
+                if (attributeValue == null) throw new NoSuchMethodException();  // Go to error block
+                
+                Method setter = data.getClass().getMethod(BlockDataSetterMethods.get(attribute.getKey()), attributeValue.getClass());
+                cachedDataSetters.put(attribute.getKey(), setter);
+            } catch (NoSuchMethodException | IllegalArgumentException e) {
+                Bukkit.getLogger().warning(String.format("[Quader setter caching: %s @ (%s, %d, %d, %d)] Error getting attribute setter: %s",
+                        material.name(),
+                        exampleBlock.getLocation().getWorld() == null ? "null" : exampleBlock.getLocation().getWorld().getName(),
+                        exampleBlock.getLocation().getBlockX(),
+                        exampleBlock.getLocation().getBlockY(),
+                        exampleBlock.getLocation().getBlockZ(),
+                        e.getMessage()));
+            }
+        }
+    }
+    
+    void applyAllAttributesTo(Block block) {
+        if (cachedDataSetters == null) {
+            Bukkit.getLogger().severe(String.format("Will not be setting attributes for block @ (%s, %d, %d, %d) because setter methods aren't cached. Tell your developer to invoke BlockData.cacheBlockDataSetters() for the quader first.",
+                    block.getLocation().getWorld() == null ? "null" : block.getLocation().getWorld().getName(),
+                    block.getLocation().getBlockX(),
+                    block.getLocation().getBlockY(),
+                    block.getLocation().getBlockZ()));
+            return;
+        }
+        
+        for (var attribute : Attributes.entrySet()) {
+            try {
+                var setter = cachedDataSetters.getOrDefault(attribute.getKey(), null);
+                if (setter == null) throw new NoSuchMethodException();
+                
+                var data = castBlockData(BlockDataInterfaceMap.get(attribute.getKey()), block.getBlockData());
+                var attributeValue = getRealAttributeValue(attribute.getKey(), attribute.getValue());
+                setter.invoke(data, attributeValue);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
+                Bukkit.getLogger().warning(String.format("[Quader application: %s @ (%s, %d, %d, %d)] Error applying attribute: %s",
+                        material.name(),
+                        block.getLocation().getWorld() == null ? "null" : block.getLocation().getWorld().getName(),
+                        block.getLocation().getBlockX(),
+                        block.getLocation().getBlockY(),
+                        block.getLocation().getBlockZ(),
+                        e.getMessage()));
+            }
+        }
+    }
+    
+    private Object getRealAttributeValue(int key, int value) {
+        switch (key) {
+            case ATTRIBUTE_ID_DIRECTIONAL:
+            case ATTRIBUTE_ID_ROTATION:
+                return IMPORT_BLOCKFACES.get(value);
+            case ATTRIBUTE_ID_AGE:
+            case ATTRIBUTE_ID_LEVEL:
+                return value - 1;
+            case ATTRIBUTE_ID_ATTACHED:
+            case ATTRIBUTE_ID_HANGING:
+            case ATTRIBUTE_ID_POWERED:
+            case ATTRIBUTE_ID_WATERLOGGED:
+            case ATTRIBUTE_ID_LIT:
+                return boolValue(value);
+            case ATTRIBUTE_ID_BISECTED_HALF:
+                return IMPORT_HALVES.get(value);
+            case ATTRIBUTE_ID_FACE_ATTACHABLE:
+                return IMPORT_ATTACHED_FACE.get(value);
+            case ATTRIBUTE_ID_RAIL:
+                return IMPORT_RAIL_DIRECTION.get(value);
+            case ATTRIBUTE_ID_ORIENTATION:
+                return IMPORT_AXIS.get(value);
+            default:
+                return null;
+        }
+    }
+    
+    private <T extends org.bukkit.block.data.BlockData> T castBlockData(Class<T> clazz, org.bukkit.block.data.BlockData blockData) throws IllegalArgumentException {
+        if (clazz.isInstance(blockData)) {
+            return clazz.cast(blockData);
+        }
+        throw new IllegalArgumentException("Provided BlockData instance does not match the expected class.");
+    }
+    
+    private void loadAttributesFrom(Block block) {
         Attributes = new HashMap<>();
         org.bukkit.block.data.BlockData data = block.getBlockData();
         if(block.getBlockData() instanceof Directional) {
             Attributes.put(ATTRIBUTE_ID_DIRECTIONAL, EXPORT_BLOCKFACES.get(((Directional)data).getFacing()));
         }
         if(block.getBlockData() instanceof Ageable) {
-            Attributes.put(ATTRIBUTE_ID_AGE, ((Ageable)data).getAge());
+            Attributes.put(ATTRIBUTE_ID_AGE, ((Ageable)data).getAge() + 1);    // age 0 is illegal because it's indistinguishable from no value at all
         }
         if(block.getBlockData() instanceof Attachable) {
             Attributes.put(ATTRIBUTE_ID_ATTACHED, boolValue(((Attachable)data).isAttached()));

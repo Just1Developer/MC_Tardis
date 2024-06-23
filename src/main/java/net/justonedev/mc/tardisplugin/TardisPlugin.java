@@ -146,7 +146,11 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             new SchematicFactory(name, firstLoc, secondLoc, captureAir).writeToFile();
         } else if (command.getName().equals("buildschematic")) {
             File file = new File(getDataFolder() + "schematics/", args[0] + ".schem");
-            p.sendMessage(file.getAbsolutePath() + " TODO");
+            if (!file.exists()) {
+                p.sendMessage("Couldn't find file " + file.getAbsolutePath());
+                return true;
+            }
+            
         }
         return true;
     }
