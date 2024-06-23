@@ -23,7 +23,6 @@ import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -205,15 +204,10 @@ public class BlockData {
         cachedDataSetters = new HashMap<>();
         for (var attribute : Attributes.entrySet()) {
             try {
-                //var data = castBlockData(BlockDataInterfaceMap.get(attribute.getKey()), exampleBlock.getBlockData());
                 var data = exampleBlock.getBlockData();
                 var attributeValue = getRealAttributeValue(attribute.getKey(), attribute.getValue());
                 if (attributeValue == null) throw new NoSuchMethodException();  // Go to error block
                 
-                //Bukkit.broadcastMessage(String.format("§dSetter method (v1): data.getClass().getMethod(BlockDataSetterMethods.get(%s), %s)", attribute.getKey(), attributeValue.getClass()));
-                //Bukkit.broadcastMessage(String.format("§dSetter method (v2): %s.getMethod(%s, %s)", data.getClass(), BlockDataSetterMethods.get(attribute.getKey()), attributeValue.getClass()));
-                //Bukkit.broadcastMessage("§bInterfaces implemented: " + Arrays.toString(exampleBlock.getBlockData().getClass().getInterfaces()));
-                //printAllMethods(data);
                 Method setter = data.getClass().getMethod(BlockDataSetterMethods.get(attribute.getKey()), classOfType(attributeValue));
                 cachedDataSetters.put(attribute.getKey(), setter);
             } catch (NoSuchMethodException | IllegalArgumentException e) {
@@ -242,19 +236,6 @@ public class BlockData {
             return long.class;
         } else {
             return _class;
-        }
-    }
-    
-    // Todo broadcast
-    private void printAllMethods(Object obj) {
-        Class<?> clazz = obj.getClass();
-        
-        // Get all methods from the class and its superclasses
-        Method[] methods = clazz.getMethods();
-        
-        // Print each method name and its parameter types
-        for (Method method : methods) {
-            Bukkit.broadcastMessage("§bMethod: " + method.getName() + ", Parameter Types: " + Arrays.toString(method.getParameterTypes()));
         }
     }
     
@@ -379,9 +360,6 @@ public class BlockData {
         return bool ? (byte) 2 : (byte) 1;
     }
     private boolean boolValue(byte i) {
-        return i == 2;
-    }
-    private boolean boolValue(int i) {
         return i == 2;
     }
     

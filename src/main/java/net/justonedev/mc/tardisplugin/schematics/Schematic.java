@@ -40,19 +40,16 @@ public class Schematic {
 			
 			// Read bytes until EOF
 			while ((currentByte = reader.read()) != -1) {	// -1 = EOF = File end
-				System.out.println(">>>> current byte " + currentByte + ", list size: " + readResults.size());
 				byte b = (byte) currentByte;  // Cast to byte
 				readResults.add(b);
 				
 				// Check if current and last byte are 0xFF
 				if (b == (byte) 0xFF) {
 					if (lastWasFF) {
-						Bukkit.broadcastMessage("Will Build Cluster with these bytes: " + readResults.size());
 						StringBuilder resultB = new StringBuilder();
 						for (Byte result : readResults) {
 							resultB.append(result).append("  ");
 						}
-						Bukkit.broadcastMessage("§e" + resultB);
 						clusters.add(Cluster.readFromBytes(readResults));
 						readResults.clear();
 						lastWasFF = false;
@@ -63,12 +60,10 @@ public class Schematic {
 					lastWasFF = false;
 				}
 			}
-			Bukkit.broadcastMessage("Finished Reading File. Bytes in list: " + readResults.size());
 			StringBuilder resultB = new StringBuilder();
 			for (Byte result : readResults) {
 				resultB.append(result).append("  ");
 			}
-			Bukkit.broadcastMessage("§e" + resultB);
 		} catch (IOException e) {
 			Bukkit.getLogger().severe("An error occured when reading schematic file " + file.getName());
 		}

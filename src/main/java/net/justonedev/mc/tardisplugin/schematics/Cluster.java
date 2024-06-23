@@ -116,8 +116,6 @@ public class Cluster {
         // Bits 4-8: The last 5 bits encode the size of the existing attributes. Since it probably won't exceed 31, we're good on this front
         bytes.add((byte) ((existingAttributes.size() & 0x1F) | (((coordsByteAmount - 1) & 0x03) << 5) | (boundsNeed24Bit ? 0x80 : 0x00)));
         // reduce variable scope
-        Bukkit.broadcastMessage("§bWill be writing " + existingAttributes.size() + " attributes that should fit into " + Math.ceil(existingAttributes.size() / 2.0));
-        Bukkit.broadcastMessage("§e(_PRE)List size is " + bytes.size());
         {
             byte b = 0;
             boolean secondHalf = false;
@@ -134,7 +132,6 @@ public class Cluster {
             // Remaining first half
             if (b != 0) bytes.add(b);
         }
-        Bukkit.broadcastMessage("§e(POST)List size is " + bytes.size());
 
         HashMap<Integer, List<Quader>> differentShapes = new HashMap<>();
         for (Quader quader : quaders) {
@@ -168,20 +165,15 @@ public class Cluster {
                 // Then, we add the orientation of the quader
                 bytes.add(quader.quaderDimensions.ORIENTATION_KEY);
                 // Then, we lock in the attributes in the exact order
-				Bukkit.broadcastMessage("§e[" + material + "] Will be writing " + existingAttributes.size() + " Attributes. List size now: " + bytes.size() + " >> " + bytes);
                 for (byte attr : existingAttributes) {
                     // This is some wild casting: Integer can't be cast to byte, so we cast
                     // it to int (primitive type), which in turn can be cast to byte.
                     bytes.add(quader.quaderData.Attributes.getOrDefault(attr, NULL_BYTE));
-					Bukkit.broadcastMessage("§dWriting Attribute " + attr + " with value " + quader.quaderData.Attributes.getOrDefault(attr, NULL_BYTE) + " for material " + materialString);
                 }
-				Bukkit.broadcastMessage("§b[" + material + "] Wrote Attributes.             List size now: " + bytes.size() + " >> " + bytes);
             }
             bytes.add(TERMINATOR_BYTE);
-            Bukkit.broadcastMessage("§d[" + material + "] Finished Quader shape. List size now: " + bytes.size() + " >> " + bytes);
         }
         bytes.add(TERMINATOR_BYTE);
-        Bukkit.broadcastMessage("§b[" + material + "] Finished Cluster. List size now: " + bytes.size() + " >> " + bytes);
 		
         byte[] byteArray = new byte[bytes.size()];
         for (int i = 0; i < bytes.size(); i++) {
@@ -193,7 +185,6 @@ public class Cluster {
     }
     
     public static Cluster readFromBytes(List<Byte> bytes) {
-		Bukkit.broadcastMessage("Will be reading a cluster from " + bytes.size() + " bytes");
         if (bytes.isEmpty()) return null;
         int index = 0;
         Material material;
@@ -212,16 +203,11 @@ public class Cluster {
                 return null;
             }
         }
-		Bukkit.broadcastMessage("Material is " + material + ", current index is " + index + " (should be 1+length = " + (1+material.name().length()) + ")");
         
         byte numberData = bytes.get(index++);
         int attributeCount = numberData & 0x1F;
         int coordBytes = ((numberData >> 5) & 0x03) + 1;
         int boundsBytes = (numberData & 0x80) != 0 ? 3 : 2;
-		
-		Bukkit.broadcastMessage("§dUsing " + attributeCount + " attributes, " + coordBytes + " coordinate bytes and " + boundsBytes + " bounds bytes");
-        Bukkit.broadcastMessage("§dIndex is currently " + index);
-        int indexPrev_broadcast = index;
         
         List<Byte> existingAttributes = new ArrayList<>();
         {
@@ -232,8 +218,6 @@ public class Cluster {
                 if ((b & 0xF0) != 0) existingAttributes.add((byte) ((b >> 4) & 0x0F));
             }
         }
-        Bukkit.broadcastMessage("§dIndex is currently " + index + ", should be §e" + (indexPrev_broadcast + Math.ceil(attributeCount/2.0)));
-        Bukkit.broadcastMessage("§dWe read " + existingAttributes.size() + " attributes that should fit into " + Math.ceil(existingAttributes.size()/2.0));
         
         Set<Quader> quaders = new HashSet<>();
         
@@ -276,27 +260,9 @@ public class Cluster {
                 
                 // Now get the attribute values
                 for (int count = 0; count < attributeCount; ++count) {
-					/*
-					try {
-						attributeValue = bytes.get(index++);
-					} catch (IndexOutOfBoundsException e) {
-						Bukkit.broadcastMessage("tried to load attrValue and failed. Attribute Count: " + attributeCount + ", count: " + count + ", index: " + (index-1) + ", bytes length: " + bytes.size());
-						Bukkit.broadcastMessage("§bMaterial: " + material.name());
-						for (var attr : existingAttributes) {
-							Bukkit.broadcastMessage("§bExisting Attr: " + attr);
-						}
-						Bukkit.broadcastMessage("§eBytelist:");
-						for (var b : bytes) {
-							Bukkit.broadcastMessage("§e>> " + b.toString());
-						}
-						throw e;
-					}
-					 */
 					byte attributeValue = bytes.get(index++);
-					Bukkit.broadcastMessage("Read attribute " + count + " at " + (index-1) + " with value " + attributeValue);
                     if (attributeValue == 0) continue;
                     var attributeKey = existingAttributes.get(count);
-                    // Todo remove, its covered || if (BlockData.isAttributeIntegerType(attributeKey)) attributeValue--;
                     attributeValues.put(attributeKey, attributeValue);
                 }
                 
@@ -305,18 +271,14 @@ public class Cluster {
                 quaders.add(new Quader(new BlockData(material, x, y, z, attributeValues), dimensions, boundsOR));
             }
         }
-		Bukkit.broadcastMessage("§dLoaded cluster of material " + material);
         
         return new Cluster(quaders);
     }
     
     private static Pair<Integer, Integer> readNumber(int currentIndex, int bytes, List<Byte> list, boolean lookoutForTerminatorByte) {
-		//if (lookoutForTerminatorByte) Bukkit.broadcastMessage("OOO I'm lookin'");
         int value = 0;
         for (int place = 0; place < bytes; ++place) {
-			//Bukkit.broadcastMessage("Lookin, now getting next. index " + currentIndex + " for list of size " + list.size() + " >> " + list);
             int next = list.get(currentIndex++);
-			//Bukkit.broadcastMessage("next was " + next + " ooooo");
             if (lookoutForTerminatorByte && place == 0 && next == TERMINATOR_BYTE) return new Pair<>(currentIndex, (int) TERMINATOR_BYTE);
             value |= (next) << 8 * (bytes - place - 1);
         }
