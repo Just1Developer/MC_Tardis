@@ -126,25 +126,12 @@ public class SchematicFactory {
 		Map<Material, List<StructureCorner>> structureCorners = new HashMap<>();
 		
 		// Go through all the blocks.
-		Bukkit.broadcastMessage("§cBlockData keyset:" + blockData.keySet());
 		for (Material mat : blockData.keySet()) {
-			Bukkit.broadcastMessage("§9Going though material " + mat);
 			for (var data : blockData.get(mat)) {
-				Bukkit.broadcastMessage("§1Going though material " + mat + " and BlockData " + data);
 				// set probably has better access time than our List
 				Set<Vector> seenLocations = new HashSet<>();
 				for (var _data : blockData.get(mat)) {
-					if (mat == Material.OAK_STAIRS) {
-						if (data.isDataSamePrint(_data)) seenLocations.add(_data.location);
-					} else {
-						if (data.isDataSame(_data)) seenLocations.add(_data.location);
-					}
-				}
-				
-				Bukkit.broadcastMessage("§aMaterial: " + mat + " == OAK_STAIRS: " + (mat == Material.OAK_STAIRS));
-				if (mat == Material.OAK_STAIRS) {
-					Bukkit.broadcastMessage(String.format("§dConsidering for corner corner with data %s | %s!", data.material, data.Attributes));
-					Bukkit.broadcastMessage("Same Data: " + seenLocations);
+					if (data.isDataSame(_data)) seenLocations.add(_data.location);
 				}
 				
 				// We have a block. To be a corner, the block needs to have max. 1 neighbor on each axis.
@@ -167,7 +154,6 @@ public class SchematicFactory {
 					else if (w) axis.add(WEST.clone());
 					if (u) axis.add(UP.clone());
 					else if (d) axis.add(DOWN.clone());
-					Bukkit.broadcastMessage(String.format("§dAdding corner with data %s | %s!", data.material, data.Attributes));
 					if (structureCorners.containsKey(data.material)) {
 						structureCorners.get(data.material).add(new StructureCorner(data, axis));
 					} else {
@@ -198,16 +184,9 @@ public class SchematicFactory {
 			for (var corner : structureCorners.get(mat)) {
 				// set probably has better access time than our List
 				Set<Vector> blockLocations = new HashSet<>();
-				Bukkit.broadcastMessage(String.format("§6Starting with new Quader. Reference: %s with attr %s", corner.blockData.material, corner.blockData.Attributes));
 				for (var data : blockData.get(mat)) {
-					if (data.isDataSame(corner.blockData)) {
-						blockLocations.add(data.location);
-						Bukkit.broadcastMessage(String.format("§eBlockdata with mat %s and attr %s is OK!", data.material, data.Attributes));
-					} else {
-						Bukkit.broadcastMessage(String.format("§cBlockdata with mat %s and attr %s is Not OK!", data.material, data.Attributes));
-					}
+					if (data.isDataSame(corner.blockData)) blockLocations.add(data.location);
 				}
-				Bukkit.broadcastMessage("§6Finished");
 				
 				if (corner.startingAxis.isEmpty()) {
 					// Single block, just build one (1) quader

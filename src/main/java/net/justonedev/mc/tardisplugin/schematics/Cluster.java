@@ -46,9 +46,6 @@ public class Cluster {
         this.quaders = quaders;
         for (var quader : quaders) {
             existingAttributes.addAll(quader.quaderData.Attributes.keySet());
-            
-            // Attributes of NORTH and SOUTH are already gone here.
-            Bukkit.broadcastMessage("§d[INIT] Quader. Mat: " + quader.quaderData.material + " Attributes: " + quader.quaderData.Attributes);
         }
         if (!quaders.isEmpty()) material = this.quaders.iterator().next().quaderData.material;
         else material = null;
@@ -151,8 +148,6 @@ public class Cluster {
                 l.add(quader);
                 differentShapes.put(hash, l);
             }
-            
-            Bukkit.broadcastMessage("§bQuader. Mat: " + quader.quaderData.material + " Attributes: " + quader.quaderData.Attributes);
         }
         
         for (var list : differentShapes.values()) {
@@ -179,7 +174,6 @@ public class Cluster {
                     // This is some wild casting: Integer can't be cast to byte, so we cast
                     // it to int (primitive type), which in turn can be cast to byte.
                     bytes.add(quader.quaderData.Attributes.getOrDefault(attr, NULL_BYTE));
-                    Bukkit.broadcastMessage("Setting attribute " + attr + " with value: " + quader.quaderData.Attributes.getOrDefault(attr, NULL_BYTE));
                 }
             }
             bytes.add(TERMINATOR_BYTE);
