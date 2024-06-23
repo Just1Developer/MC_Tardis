@@ -276,6 +276,7 @@ public class BlockData {
         switch (key) {
             case ATTRIBUTE_ID_DIRECTIONAL:
             case ATTRIBUTE_ID_ROTATION:
+                Bukkit.broadcastMessage(String.format("§d[Directional] Reading attribute entry. key = %d, value = %d, Interpreted value = %s", key, value, IMPORT_BLOCKFACES.get(value)));
                 return IMPORT_BLOCKFACES.get(value);
             case ATTRIBUTE_ID_AGE:
             case ATTRIBUTE_ID_LEVEL:
@@ -311,6 +312,8 @@ public class BlockData {
         org.bukkit.block.data.BlockData data = block.getBlockData();
         if(block.getBlockData() instanceof Directional) {
             Attributes.put(ATTRIBUTE_ID_DIRECTIONAL, EXPORT_BLOCKFACES.get(((Directional)data).getFacing()));
+            Bukkit.broadcastMessage(String.format("§e[Directional] Making Attribute Entry. Block: (%s, %d, %d, %d). Value: %s, Saving %s", block.getType().name(), block.getLocation().getBlockX(), block.getLocation().getBlockY(), block.getLocation().getBlockZ(), ((Directional)data).getFacing(), EXPORT_BLOCKFACES.get(((Directional)data).getFacing())));
+            Bukkit.broadcastMessage(String.format("§e[2] Attributes: " + Attributes));
         }
         if(block.getBlockData() instanceof Ageable) {
             Attributes.put(ATTRIBUTE_ID_AGE, (byte) ((byte) (((Ageable)data).getAge() + 1) & 0xFF));    // age 0 is illegal because it's indistinguishable from no value at all
@@ -368,7 +371,36 @@ public class BlockData {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BlockData blockData = (BlockData) o;
-        return Objects.equals(location, blockData.location) && material == blockData.material && Objects.equals(Attributes, blockData.Attributes);
+        if (Attributes.size() != ((BlockData) o).Attributes.size()) return false;
+        for (var entry : Attributes.entrySet()) {
+            if (blockData.Attributes.containsKey(entry.getKey())) return false;
+            if (!Objects.equals(blockData.Attributes.get(entry.getKey()), entry.getValue())) return false;
+        }
+        return Objects.equals(location, blockData.location) && material == blockData.material;
+    }
+    
+    public boolean isDataSame(BlockData blockData) {
+        if (this == blockData) return true;
+        if (blockData == null || getClass() != blockData.getClass()) return false;
+        if (Attributes.size() != blockData.Attributes.size()) return false;
+        for (var entry : Attributes.entrySet()) {
+            if (!blockData.Attributes.containsKey(entry.getKey())) return false;
+            if (!Objects.equals(blockData.Attributes.get(entry.getKey()), entry.getValue())) return false;
+        }
+        return material == blockData.material;
+    }
+    
+    public boolean isDataSamePrint(BlockData blockData) {
+        if (this == blockData) return true;
+        if (blockData == null || getClass() != blockData.getClass()) return false;
+        if (Attributes.size() != blockData.Attributes.size()) return false;
+        for (var entry : Attributes.entrySet()) {
+            Bukkit.broadcastMessage(String.format("Comparing attribute %s value %s with value %s", entry.getKey(), entry.getValue(), blockData.Attributes.get(entry.getKey())));
+            if (!blockData.Attributes.containsKey(entry.getKey())) return false;
+            if (!Objects.equals(blockData.Attributes.get(entry.getKey()), entry.getValue())) return false;
+        }
+        Bukkit.broadcastMessage(String.format("Entries are valid, materials %s ans %s are same? %s", material, blockData.material, material == blockData.material));
+        return material == blockData.material;
     }
     
     @Override

@@ -1,13 +1,9 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
-import net.justonedev.mc.tardisplugin.TardisPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +46,9 @@ public class Cluster {
         this.quaders = quaders;
         for (var quader : quaders) {
             existingAttributes.addAll(quader.quaderData.Attributes.keySet());
+            
+            // Attributes of NORTH and SOUTH are already gone here.
+            Bukkit.broadcastMessage("§d[INIT] Quader. Mat: " + quader.quaderData.material + " Attributes: " + quader.quaderData.Attributes);
         }
         if (!quaders.isEmpty()) material = this.quaders.iterator().next().quaderData.material;
         else material = null;
@@ -57,6 +56,15 @@ public class Cluster {
     
     public void placeInWorld(Location anchorLocation) {
         for (var q : quaders) q.placeInWorld(anchorLocation);
+    }
+    
+    public int placeBreakdown(Location anchorLocation, int materialIndex) {
+        for (var q : quaders) {
+            Material mat = Schematic.breakdownMaterials[materialIndex++];
+            if (materialIndex >= Schematic.breakdownMaterials.length) materialIndex = 0;
+            q.placeBreakdown(anchorLocation, mat);
+        }
+        return materialIndex;
     }
 
     // First byte: first bit gives format: 0 => 16-bit, 1 => 24-bit
@@ -143,6 +151,8 @@ public class Cluster {
                 l.add(quader);
                 differentShapes.put(hash, l);
             }
+            
+            Bukkit.broadcastMessage("§bQuader. Mat: " + quader.quaderData.material + " Attributes: " + quader.quaderData.Attributes);
         }
         
         for (var list : differentShapes.values()) {
@@ -169,6 +179,7 @@ public class Cluster {
                     // This is some wild casting: Integer can't be cast to byte, so we cast
                     // it to int (primitive type), which in turn can be cast to byte.
                     bytes.add(quader.quaderData.Attributes.getOrDefault(attr, NULL_BYTE));
+                    Bukkit.broadcastMessage("Setting attribute " + attr + " with value: " + quader.quaderData.Attributes.getOrDefault(attr, NULL_BYTE));
                 }
             }
             bytes.add(TERMINATOR_BYTE);
@@ -296,21 +307,6 @@ public class Cluster {
             list.add((byte) ((number & 0xFF00) >> 8));
         }
         list.add((byte) (number & 0xFF));
-    }
-
-    void write(String schemFileName) {
-        if (!new File(TardisPlugin.singleton.getDataFolder() + "/schematics/").exists())
-            if (!new File(TardisPlugin.singleton.getDataFolder() + "/schematics/").mkdirs()) return;
-        File schemFile = new File(TardisPlugin.singleton.getDataFolder() + "/schematics/" + schemFileName + ".schem");
-        try {
-            if (!schemFile.createNewFile()) return;
-            FileOutputStream fos = new FileOutputStream(schemFile);
-            fos.write(encode());
-            fos.flush();
-            fos.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

@@ -126,13 +126,27 @@ public class SchematicFactory {
 		Map<Material, List<StructureCorner>> structureCorners = new HashMap<>();
 		
 		// Go through all the blocks.
+		Bukkit.broadcastMessage("§cBlockData keyset:" + blockData.keySet());
 		for (Material mat : blockData.keySet()) {
-			// set probably has better access time than our List
-			Set<Vector> seenLocations = new HashSet<>();
+			Bukkit.broadcastMessage("§9Going though material " + mat);
 			for (var data : blockData.get(mat)) {
-				seenLocations.add(data.location);
-			}
-			for (var data : blockData.get(mat)) {
+				Bukkit.broadcastMessage("§1Going though material " + mat + " and BlockData " + data);
+				// set probably has better access time than our List
+				Set<Vector> seenLocations = new HashSet<>();
+				for (var _data : blockData.get(mat)) {
+					if (mat == Material.OAK_STAIRS) {
+						if (data.isDataSamePrint(_data)) seenLocations.add(_data.location);
+					} else {
+						if (data.isDataSame(_data)) seenLocations.add(_data.location);
+					}
+				}
+				
+				Bukkit.broadcastMessage("§aMaterial: " + mat + " == OAK_STAIRS: " + (mat == Material.OAK_STAIRS));
+				if (mat == Material.OAK_STAIRS) {
+					Bukkit.broadcastMessage(String.format("§dConsidering for corner corner with data %s | %s!", data.material, data.Attributes));
+					Bukkit.broadcastMessage("Same Data: " + seenLocations);
+				}
+				
 				// We have a block. To be a corner, the block needs to have max. 1 neighbor on each axis.
 				// In total, we are looking for six neighbors.
 				boolean n = seenLocations.contains(data.location.clone().add(NORTH)),
@@ -153,6 +167,7 @@ public class SchematicFactory {
 					else if (w) axis.add(WEST.clone());
 					if (u) axis.add(UP.clone());
 					else if (d) axis.add(DOWN.clone());
+					Bukkit.broadcastMessage(String.format("§dAdding corner with data %s | %s!", data.material, data.Attributes));
 					if (structureCorners.containsKey(data.material)) {
 						structureCorners.get(data.material).add(new StructureCorner(data, axis));
 					} else {
@@ -171,11 +186,6 @@ public class SchematicFactory {
 		// From every corner, just walk.
 		// Go through all the blocks.
 		for (Material mat : blockData.keySet()) {
-			// set probably has better access time than our List
-			Set<Vector> blockLocations = new HashSet<>();
-			for (var data : blockData.get(mat)) {
-				blockLocations.add(data.location);
-			}
 			
 			
 			/*
@@ -186,57 +196,80 @@ public class SchematicFactory {
 			
 			
 			for (var corner : structureCorners.get(mat)) {
-				while (!corner.startingAxis.isEmpty()) {
-					//Quader quader = new Quader();
-					
-					Vector start = corner.blockData.location.clone(), end = corner.blockData.location.clone();
-					
-					Vector currentAxis = corner.startingAxis.get(0);
-					corner.startingAxis.remove(currentAxis);
-					Set<Vector> expanded = new HashSet<>();
-					
-					while (currentAxis != null) {
-						final boolean negativeExpansion = isNegativeExpansion(currentAxis);
-						// Todo If we encounter a corner, perhaps make sure to remove the OPPOSITE direction as starting point
-						while (true) {
-							var blockRow = getNextBlockRow(start, end, currentAxis);
-							boolean _break = false;
-							for (Vector block : blockRow) {
-								if (!blockLocations.contains(block)) {
-									// Exploration finished, can't explore further
-									_break = true;
-									break;
-								}
-							}
-							if (_break) break;
-							
-							if (negativeExpansion) start.add(currentAxis);
-							else end.add(currentAxis);
-						}
-						
-						// Now choose next axis
-						expanded.add(currentAxis);
-						currentAxis = null;
-						for (Vector visitable : corner.explorableAxis) {
-							if (expanded.contains(visitable)) continue;
-							currentAxis = visitable;
-						}
-					}
-					// Now we've expanded all we can
-					
-					// Let's build a quader
-					Quader quader = new Quader(corner.blockData, start, end);
-					if (allQuaders.containsKey(corner.blockData.material)) {
-						allQuaders.get(corner.blockData.material).add(quader);
+				// set probably has better access time than our List
+				Set<Vector> blockLocations = new HashSet<>();
+				Bukkit.broadcastMessage(String.format("§6Starting with new Quader. Reference: %s with attr %s", corner.blockData.material, corner.blockData.Attributes));
+				for (var data : blockData.get(mat)) {
+					if (data.isDataSame(corner.blockData)) {
+						blockLocations.add(data.location);
+						Bukkit.broadcastMessage(String.format("§eBlockdata with mat %s and attr %s is OK!", data.material, data.Attributes));
 					} else {
-						Set<Quader> set = new HashSet<>();
-						set.add(quader);
-						allQuaders.put(corner.blockData.material, set);
+						Bukkit.broadcastMessage(String.format("§cBlockdata with mat %s and attr %s is Not OK!", data.material, data.Attributes));
+					}
+				}
+				Bukkit.broadcastMessage("§6Finished");
+				
+				if (corner.startingAxis.isEmpty()) {
+					// Single block, just build one (1) quader
+					Quader quader = new Quader(corner.blockData, corner.blockData.location, corner.blockData.location);
+					registerNewQuader(allQuaders, corner, quader);
+				} else {
+					while (!corner.startingAxis.isEmpty()) {
+						//Quader quader = new Quader();
+						
+						Vector start = corner.blockData.location.clone(), end = corner.blockData.location.clone();
+						
+						Vector currentAxis = corner.startingAxis.get(0);
+						corner.startingAxis.remove(currentAxis);
+						Set<Vector> expanded = new HashSet<>();
+						
+						while (currentAxis != null) {
+							final boolean negativeExpansion = isNegativeExpansion(currentAxis);
+							// Todo If we encounter a corner, perhaps make sure to remove the OPPOSITE direction as starting point
+							while (true) {
+								var blockRow = getNextBlockRow(start, end, currentAxis);
+								boolean _break = false;
+								for (Vector block : blockRow) {
+									if (!blockLocations.contains(block)) {
+										// Exploration finished, can't explore further
+										_break = true;
+										break;
+									}
+								}
+								if (_break) break;
+								
+								if (negativeExpansion) start.add(currentAxis);
+								else end.add(currentAxis);
+							}
+							
+							// Now choose next axis
+							expanded.add(currentAxis);
+							currentAxis = null;
+							for (Vector visitable : corner.explorableAxis) {
+								if (expanded.contains(visitable)) continue;
+								currentAxis = visitable;
+							}
+						}
+						// Now we've expanded all we can
+						
+						// Let's build a quader
+						Quader quader = new Quader(corner.blockData, start, end);
+						registerNewQuader(allQuaders, corner, quader);
 					}
 				}
 			}
 		}
 		return allQuaders;
+	}
+	
+	private void registerNewQuader(Map<Material, Set<Quader>> allQuaders, StructureCorner corner, Quader quader) {
+		if (allQuaders.containsKey(corner.blockData.material)) {
+			allQuaders.get(corner.blockData.material).add(quader);
+		} else {
+			Set<Quader> set = new HashSet<>();
+			set.add(quader);
+			allQuaders.put(corner.blockData.material, set);
+		}
 	}
 	
 	private static boolean isNegativeExpansion(Vector vector) {

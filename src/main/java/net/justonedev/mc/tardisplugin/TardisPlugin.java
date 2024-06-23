@@ -58,6 +58,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("home").setExecutor(this);
         getCommand("schematic").setExecutor(this);
         getCommand("buildschematic").setExecutor(this);
+        getCommand("breakdownschematic").setExecutor(this);
         getCommand("test").setExecutor(this);
         
         BlockData.init();
@@ -162,6 +163,14 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             }
             Schematic schematic = new Schematic(file);
             schematic.placeInWorld(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
+        } else if (command.getName().equals("breakdownschematic")) {
+            File file = new File(getDataFolder() + "/schematics/", args[0] + Schematic.FILE_ENDING);
+            if (!file.exists()) {
+                p.sendMessage("Couldn't find file " + file.getAbsolutePath());
+                return true;
+            }
+            Schematic schematic = new Schematic(file);
+            schematic.placeBreakdown(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
         } else if (command.getName().equals("test")) {
             Block b = p.getLocation().clone().add(1, 0, 0).getBlock();
             b.setType(Material.OAK_STAIRS);

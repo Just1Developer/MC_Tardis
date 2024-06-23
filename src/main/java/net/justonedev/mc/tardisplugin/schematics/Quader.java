@@ -2,6 +2,7 @@ package net.justonedev.mc.tardisplugin.schematics;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
 
@@ -77,6 +78,32 @@ public class Quader {
                 for (int z = 0; z <= bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
                     Block b = anchor.getWorld().getBlockAt(writeHead);
                     applyWholeBlockData(b);
+                }
+                writeHead.setZ(anchor.getBlockZ());
+            }
+            writeHead.setY(anchor.getBlockY());
+        }
+    }
+    
+    public void placeBreakdown(Location anchorPosition, Material material) {
+        Location anchor = anchorPosition.clone().add(quaderData.location);
+        if (anchor.getWorld() == null) {
+            Bukkit.getLogger().severe("placeInWorld called on Quader, but world was null. Location: " + anchorPosition);
+            return;
+        }
+        if (!anchor.isWorldLoaded()) {
+            Bukkit.getLogger().severe("placeInWorld called on Quader, but world wasn't loaded. World: " + anchor.getWorld().getName());
+            return;
+        }
+        Location writeHead = anchor.clone();
+        Vector bounds = quaderDimensions.toVectorDimension();
+        var headBlock = writeHead.getBlock();
+        headBlock.setType(material);
+        
+        for (int x = 0; x <= bounds.getBlockX(); ++x, writeHead.add(1, 0, 0)) {
+            for (int y = 0; y <= bounds.getBlockY(); ++y, writeHead.add(0, 1, 0)) {
+                for (int z = 0; z <= bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
+                    writeHead.getBlock().setType(material);
                 }
                 writeHead.setZ(anchor.getBlockZ());
             }
