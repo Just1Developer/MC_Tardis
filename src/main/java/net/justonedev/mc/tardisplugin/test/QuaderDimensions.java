@@ -68,7 +68,7 @@ public class QuaderDimensions {
 		return new QuaderDimensions(val1, val2, val3, ORIENT_XYZ);
 	}
 	
-	private byte getOrientationKey(byte key, Axis swapped1, Axis swapped2) {
+	static byte getOrientationKey(byte key, Axis swapped1, Axis swapped2) {
 		if (swapped1 == swapped2) return key;
 		
 		// Smaller goes in front
@@ -82,7 +82,7 @@ public class QuaderDimensions {
 		
 		if (swapped1 == Axis.X) {
 			if (swapped2 == Axis.Y) {
-				switch (ORIENTATION_KEY) {
+				switch (key) {
 					case ORIENT_XYZ: return ORIENT_YXZ;
 					case ORIENT_XZY: return ORIENT_YZX;
 					case ORIENT_YXZ: return ORIENT_XYZ;
@@ -91,7 +91,7 @@ public class QuaderDimensions {
 					case ORIENT_ZYX: return ORIENT_ZXY;
 				}
 			} else if (swapped2 == Axis.Z) {
-				switch (ORIENTATION_KEY) {
+				switch (key) {
 					case ORIENT_XYZ: return ORIENT_ZYX;
 					case ORIENT_XZY: return ORIENT_ZXY;
 					case ORIENT_YXZ: return ORIENT_YZX;
@@ -102,7 +102,7 @@ public class QuaderDimensions {
 			}
 		} else if(swapped1 == Axis.Y) {
 			// Swapped2 = Z
-			switch (ORIENTATION_KEY) {
+			switch (key) {
 				case ORIENT_XYZ: return ORIENT_XZY;
 				case ORIENT_XZY: return ORIENT_XYZ;
 				case ORIENT_YXZ: return ORIENT_ZXY;

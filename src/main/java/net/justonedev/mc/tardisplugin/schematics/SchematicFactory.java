@@ -96,10 +96,10 @@ public class SchematicFactory {
 					if (b.getType() == Material.AIR && !captureAir) continue;
 					
 					if (blockData.containsKey(b.getType())) {
-						blockData.get(b.getType()).add(new BlockData(b));
+						blockData.get(b.getType()).add(new BlockData(b, minLocation));
 					} else {
 						List<BlockData> list = new ArrayList<>();
-						list.add(new BlockData(b));
+						list.add(new BlockData(b, minLocation));
 						blockData.put(b.getType(), list);
 					}
 				}
@@ -193,7 +193,6 @@ public class SchematicFactory {
 						final boolean negativeExpansion = isNegativeExpansion(currentAxis);
 						// Todo If we encounter a corner, perhaps make sure to remove the OPPOSITE direction as starting point
 						while (true) {
-							// Todo check for errors
 							var blockRow = getNextBlockRow(start, end, currentAxis);
 							boolean _break = false;
 							for (Vector block : blockRow) {

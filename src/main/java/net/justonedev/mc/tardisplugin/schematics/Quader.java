@@ -2,6 +2,7 @@ package net.justonedev.mc.tardisplugin.schematics;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
 
@@ -24,6 +25,11 @@ public class Quader {
         final Vector minVect = minimalLocation(startPos, endpos);
         this.quaderData = blockData.copy(minVect);
         this.quaderDimensions = new QuaderDimensions(maximalLocation(startPos, endpos).subtract(minVect));
+        if (quaderData.material == Material.BEDROCK) {
+            var v = maximalLocation(startPos, endpos).subtract(minVect);
+            Bukkit.broadcastMessage(String.format("§eBedrock bounds: (%d, %d, %d)", v.getBlockX(), v.getBlockY(), v.getBlockZ()));
+            Bukkit.broadcastMessage(String.format("§eDimensions: (%d, %d, %d) with OR %d", quaderDimensions.VALUE1, quaderDimensions.VALUE2, quaderDimensions.VALUE3, quaderDimensions.ORIENTATION_KEY));
+        }
         this.locked = false;
     }
     
@@ -86,7 +92,6 @@ public class Quader {
     
     private void applyWholeBlockData(Block block) {
         block.setType(quaderData.material);
-        Bukkit.broadcastMessage(String.format("Setting block to %s @ (%s, %d, %d, %d)", quaderData.material, block.getWorld().getName(), block.getLocation().getBlockX(), block.getLocation().getBlockY(), block.getLocation().getBlockZ()));
         quaderData.applyAllAttributesTo(block);
     }
     

@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
 import org.bukkit.Axis;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -29,27 +30,34 @@ public class QuaderDimensions {
 	public QuaderDimensions(int x, int y, int z) {
 		// 3 Swaps maximum
 		byte orient = ORIENT_XYZ;
+		Bukkit.broadcastMessage(String.format("§bCreating QuaderDims with: (%d, %d, %d) with OR %d", x, y, z, orient));
 		if (x > y) {
+			Bukkit.broadcastMessage("X > Y, Swapping. OR (prev): " + orient);
 			int temp = y;
 			y = x;
 			x = temp;
 			orient = getOrientationKey(orient, Axis.X, Axis.Y);
 		}
+		Bukkit.broadcastMessage(String.format("§ePost Check 1: (%d, %d, %d) with OR %d", x, y, z, orient));
 		// X < Y definitely
 		// X < Z?
 		if (x > z) {
+			Bukkit.broadcastMessage("X > Z, Swapping. OR (prev): " + orient);
 			int temp = z;
 			z = x;
 			x = temp;
 			orient = getOrientationKey(orient, Axis.X, Axis.Z);
 		}
+		Bukkit.broadcastMessage(String.format("§ePost Check 2: (%d, %d, %d) with OR %d", x, y, z, orient));
 		// X < Y definitely
 		if (y > z) {
+			Bukkit.broadcastMessage("Y > Z, Swapping. OR (prev): " + orient);
 			int temp = z;
 			z = y;
 			y = temp;
 			orient = getOrientationKey(orient, Axis.Y, Axis.Z);
 		}
+		Bukkit.broadcastMessage(String.format("§ePost Check 3: (%d, %d, %d) with OR %d", x, y, z, orient));
 		
 		VALUE1 = x;
 		VALUE2 = y;
@@ -79,10 +87,11 @@ public class QuaderDimensions {
 			swapped1 = Axis.Y;
 			swapped2 = Axis.Z;
 		}
+		Bukkit.broadcastMessage("§dSwapping Axis " + swapped1 + " and " + swapped2);
 		
 		if (swapped1 == Axis.X) {
 			if (swapped2 == Axis.Y) {
-				switch (ORIENTATION_KEY) {
+				switch (key) {
 					case ORIENT_XYZ: return ORIENT_YXZ;
 					case ORIENT_XZY: return ORIENT_YZX;
 					case ORIENT_YXZ: return ORIENT_XYZ;
@@ -91,7 +100,7 @@ public class QuaderDimensions {
 					case ORIENT_ZYX: return ORIENT_ZXY;
 				}
 			} else if (swapped2 == Axis.Z) {
-				switch (ORIENTATION_KEY) {
+				switch (key) {
 					case ORIENT_XYZ: return ORIENT_ZYX;
 					case ORIENT_XZY: return ORIENT_ZXY;
 					case ORIENT_YXZ: return ORIENT_YZX;
@@ -102,7 +111,7 @@ public class QuaderDimensions {
 			}
 		} else if(swapped1 == Axis.Y) {
 			// Swapped2 = Z
-			switch (ORIENTATION_KEY) {
+			switch (key) {
 				case ORIENT_XYZ: return ORIENT_XZY;
 				case ORIENT_XZY: return ORIENT_XYZ;
 				case ORIENT_YXZ: return ORIENT_ZXY;

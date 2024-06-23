@@ -155,8 +155,8 @@ public class BlockData {
     final Material material;
     HashMap<Integer, Integer> Attributes;
     
-    public BlockData(Block block) {
-        this.location = new Vector(block.getLocation().getBlockX(), block.getLocation().getBlockY(), block.getLocation().getBlockZ());
+    public BlockData(Block block, Location offsetLocation) {
+        this.location = new Vector(block.getLocation().getBlockX() - offsetLocation.getBlockX(), block.getLocation().getBlockY() - offsetLocation.getBlockY(), block.getLocation().getBlockZ() - offsetLocation.getBlockZ());
         this.material = block.getType();
         loadAttributesFrom(block);
     }
