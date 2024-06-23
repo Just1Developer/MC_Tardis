@@ -74,7 +74,8 @@ public class TardisFiles {
         // Insert in map is done in constructor
         Tardis tardis = new Tardis(ownerUUID, tardisUUID, outerShellIndex, plotID);
         String modelUUID = cfg.getString("presence");
-        if (modelUUID != null && !modelUUID.isBlank())
-            tardis.bindCurrentModelTardis(UUID.fromString(modelUUID));
+        if (modelUUID != null && !modelUUID.isBlank()) {
+            tardis.bindCurrentModelTardis(UUID.fromString(modelUUID), true);
+        }
     }
 }

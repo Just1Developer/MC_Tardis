@@ -121,6 +121,12 @@ public class Tardis {
         bindCurrentModelTardis(armorStandUUID, true);
     }
     void bindCurrentModelTardis(UUID armorStandUUID, boolean overrideModel) {
+        
+        // Todo for binding to work, the chunk where the tardis is located must be loaded
+        // Todo: work with UUID instead and query entity when necessary
+        
+        // Todo: Or save shell location
+        
         if (armorStandUUID == null) return;
         if (overrideModel) this.currentModelTardis = (ArmorStand) Bukkit.getEntity(armorStandUUID);
         TardisPlugin.singleton.tardisesByEntityUUID.put(armorStandUUID, this);

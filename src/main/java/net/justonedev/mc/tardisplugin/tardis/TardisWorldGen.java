@@ -90,7 +90,6 @@ public final class TardisWorldGen {
      * @return An optional of the tardis ID. Empty if x or z are outside the bounds of plots.
      */
     public static Optional<Integer> calculateTardisIDbyLoc(int x, int z) {
-        Bukkit.broadcastMessage("Calc req with x = " + x + " and z = " + z);
         if (x < -ZERO_COORDINATE_OFFSET || z < -ZERO_COORDINATE_OFFSET
                 || x >= PLOT_END_XZ || z >= PLOT_END_XZ) return Optional.empty();
         x += ZERO_COORDINATE_OFFSET;
