@@ -38,7 +38,7 @@ public class Cluster {
     
     String material;
     Set<Quader> quaders;
-    Set<Integer> existingAttributes;
+    Set<Byte> existingAttributes;
 
     Cluster(Set<Quader> quaders) {
         existingAttributes = new HashSet<>();
@@ -75,13 +75,13 @@ public class Cluster {
         int coordBytes = ((numberData >> 5) & 0x03) + 1;
         int boundsBytes = (numberData & 0x80) != 0 ? 3 : 2;
         
-        List<Integer> existingAttributes = new ArrayList<>();
+        List<Byte> existingAttributes = new ArrayList<>();
         {
             byte b;
             for (int count = 0; count < attributeCount; count += 2) {
                 b = bytes.get(index++);
-                existingAttributes.add(b & 0x0F);
-                if ((b & 0xF0) != 0) existingAttributes.add((b >> 4) & 0x0F);
+                existingAttributes.add((byte) (b & 0x0F));
+                if ((b & 0xF0) != 0) existingAttributes.add((byte) ((b >> 4) & 0x0F));
             }
         }
         
@@ -107,7 +107,7 @@ public class Cluster {
             
             while (true) {
                 // read single quaders with the same shape here.
-                Map<Integer, Integer> attributeValues = new HashMap<>();
+                Map<Byte, Byte> attributeValues = new HashMap<>();
                 // Read different quader shapes here
                 readNumberResult = readNumber(index, coordBytes, bytes, true);
                 index = readNumberResult.value1;
@@ -126,7 +126,7 @@ public class Cluster {
                 
                 // Now get the attribute values
                 for (int count = 0; count < attributeCount; ++count) {
-                    int attributeValue = bytes.get(index++);
+                    byte attributeValue = bytes.get(index++);
                     if (attributeValue == 0) continue;
                     attributeValues.put(existingAttributes.get(count), attributeValue);
                 }

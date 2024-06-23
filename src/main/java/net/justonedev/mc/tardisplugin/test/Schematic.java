@@ -1,7 +1,5 @@
 package net.justonedev.mc.tardisplugin.test;
 
-import org.bukkit.Bukkit;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -17,7 +15,7 @@ public class Schematic {
 	public Schematic(File saveFile) {
 		clusters = new ArrayList<>();
 		if (!saveFile.exists()) {
-			Bukkit.getLogger().warning("Couldn't find file " + saveFile.getAbsolutePath());
+			//Bukkit.getLogger().warning("Couldn't find file " + saveFile.getAbsolutePath());
 			return;
 		}
 		readFile(saveFile);

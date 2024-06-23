@@ -17,6 +17,7 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.Waterlogged;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -25,95 +26,95 @@ import java.util.Map;
 import java.util.Objects;
 
 public class BlockData {
-
+    
     // Save attributes whose values can be saved in a single byte.
     
-    private static final int ATTRIBUTE_ID_WATERLOGGED = 1;  // Boolean
-    private static final int ATTRIBUTE_ID_DIRECTIONAL = 2;  // Direction (Blockface)
-    private static final int ATTRIBUTE_ID_AGE = 3;          // Int
-    private static final int ATTRIBUTE_ID_ATTACHED = 4;     // Boolean
-    private static final int ATTRIBUTE_ID_FACE_ATTACHABLE = 5;  // Enum with 3 values
-    private static final int ATTRIBUTE_ID_HANGING = 6;      // Boolean
-    private static final int ATTRIBUTE_ID_LEVEL = 7;        // Integer
-    private static final int ATTRIBUTE_ID_POWERED = 8;      // Boolean
-    private static final int ATTRIBUTE_ID_RAIL = 9;         // Enum with 10 values
-    private static final int ATTRIBUTE_ID_LIT = 10;         // Boolean
-    private static final int ATTRIBUTE_ID_ORIENTATION = 11;  // Axis enum: X,Y,Z
-    private static final int ATTRIBUTE_ID_ROTATION = 12;    // Blockface enum
-    private static final int ATTRIBUTE_ID_BISECTED_HALF = 13;     // Enum with 2 values
+    private static final byte ATTRIBUTE_ID_WATERLOGGED = 1;  // Boolean
+    private static final byte ATTRIBUTE_ID_DIRECTIONAL = 2;  // Direction (Blockface)
+    private static final byte ATTRIBUTE_ID_AGE = 3;          // Int
+    private static final byte ATTRIBUTE_ID_ATTACHED = 4;     // Boolean
+    private static final byte ATTRIBUTE_ID_FACE_ATTACHABLE = 5;  // Enum with 3 values
+    private static final byte ATTRIBUTE_ID_HANGING = 6;      // Boolean
+    private static final byte ATTRIBUTE_ID_LEVEL = 7;        // Integer
+    private static final byte ATTRIBUTE_ID_POWERED = 8;      // Boolean
+    private static final byte ATTRIBUTE_ID_RAIL = 9;         // Enum with 10 values
+    private static final byte ATTRIBUTE_ID_LIT = 10;         // Boolean
+    private static final byte ATTRIBUTE_ID_ORIENTATION = 11;  // Axis enum: X,Y,Z
+    private static final byte ATTRIBUTE_ID_ROTATION = 12;    // Blockface enum
+    private static final byte ATTRIBUTE_ID_BISECTED_HALF = 13;     // Enum with 2 values
     // => 4 bit required to attribute declaration
     
-    private static final Map<Integer, BlockFace> IMPORT_BLOCKFACES = new HashMap<>();
-    private static final Map<BlockFace, Integer> EXPORT_BLOCKFACES = new HashMap<>();
-    private static final Map<Integer, FaceAttachable.AttachedFace> IMPORT_ATTACHED_FACE = new HashMap<>();
-    private static final Map<FaceAttachable.AttachedFace, Integer> EXPORT_ATTACHED_FACE = new HashMap<>();
-    private static final Map<Integer, Rail.Shape> IMPORT_RAIL_DIRECTION = new HashMap<>();
-    private static final Map<Rail.Shape, Integer> EXPORT_RAIL_DIRECTION = new HashMap<>();
-    private static final Map<Integer, Axis> IMPORT_AXIS = new HashMap<>();
-    private static final Map<Axis, Integer> EXPORT_AXIS = new HashMap<>();
-    private static final Map<Integer, Bisected.Half> IMPORT_HALVES = new HashMap<>();
-    private static final Map<Bisected.Half, Integer> EXPORT_HALVES = new HashMap<>();
+    private static final Map<Byte, BlockFace> IMPORT_BLOCKFACES = new HashMap<>();
+    private static final Map<BlockFace, Byte> EXPORT_BLOCKFACES = new HashMap<>();
+    private static final Map<Byte, FaceAttachable.AttachedFace> IMPORT_ATTACHED_FACE = new HashMap<>();
+    private static final Map<FaceAttachable.AttachedFace, Byte> EXPORT_ATTACHED_FACE = new HashMap<>();
+    private static final Map<Byte, Rail.Shape> IMPORT_RAIL_DIRECTION = new HashMap<>();
+    private static final Map<Rail.Shape, Byte> EXPORT_RAIL_DIRECTION = new HashMap<>();
+    private static final Map<Byte, Axis> IMPORT_AXIS = new HashMap<>();
+    private static final Map<Axis, Byte> EXPORT_AXIS = new HashMap<>();
+    private static final Map<Byte, Bisected.Half> IMPORT_HALVES = new HashMap<>();
+    private static final Map<Bisected.Half, Byte> EXPORT_HALVES = new HashMap<>();
     
-    private static HashMap<Integer, Class<? extends org.bukkit.block.data.BlockData>> BlockDataInterfaceMap;
-    private static HashMap<Integer, String> BlockDataSetterMethods;
+    private static HashMap<Byte, Class<? extends org.bukkit.block.data.BlockData>> BlockDataInterfaceMap;
+    private static HashMap<Byte, String> BlockDataSetterMethods;
     
     public static void init() {
         // Explicit because what if the order changes in values()? then everything is mapped wrong for old models
-        IMPORT_BLOCKFACES.put(1, BlockFace.SELF);
-        IMPORT_BLOCKFACES.put(2, BlockFace.DOWN);
-        IMPORT_BLOCKFACES.put(3, BlockFace.UP);
-        IMPORT_BLOCKFACES.put(4, BlockFace.NORTH);
-        IMPORT_BLOCKFACES.put(5, BlockFace.NORTH_NORTH_EAST);
-        IMPORT_BLOCKFACES.put(6, BlockFace.NORTH_EAST);
-        IMPORT_BLOCKFACES.put(7, BlockFace.EAST_NORTH_EAST);
-        IMPORT_BLOCKFACES.put(8, BlockFace.EAST);
-        IMPORT_BLOCKFACES.put(9, BlockFace.EAST_SOUTH_EAST);
-        IMPORT_BLOCKFACES.put(10, BlockFace.SOUTH_EAST);
-        IMPORT_BLOCKFACES.put(11, BlockFace.SOUTH_SOUTH_EAST);
-        IMPORT_BLOCKFACES.put(12, BlockFace.SOUTH);
-        IMPORT_BLOCKFACES.put(13, BlockFace.SOUTH_SOUTH_WEST);
-        IMPORT_BLOCKFACES.put(14, BlockFace.SOUTH_WEST);
-        IMPORT_BLOCKFACES.put(15, BlockFace.WEST_SOUTH_WEST);
-        IMPORT_BLOCKFACES.put(16, BlockFace.WEST);
-        IMPORT_BLOCKFACES.put(17, BlockFace.WEST_NORTH_WEST);
-        IMPORT_BLOCKFACES.put(18, BlockFace.NORTH_WEST);
-        IMPORT_BLOCKFACES.put(19, BlockFace.NORTH_NORTH_WEST);
+        IMPORT_BLOCKFACES.put((byte) 1, BlockFace.SELF);
+        IMPORT_BLOCKFACES.put((byte) 2, BlockFace.DOWN);
+        IMPORT_BLOCKFACES.put((byte) 3, BlockFace.UP);
+        IMPORT_BLOCKFACES.put((byte) 4, BlockFace.NORTH);
+        IMPORT_BLOCKFACES.put((byte) 5, BlockFace.NORTH_NORTH_EAST);
+        IMPORT_BLOCKFACES.put((byte) 6, BlockFace.NORTH_EAST);
+        IMPORT_BLOCKFACES.put((byte) 7, BlockFace.EAST_NORTH_EAST);
+        IMPORT_BLOCKFACES.put((byte) 8, BlockFace.EAST);
+        IMPORT_BLOCKFACES.put((byte) 9, BlockFace.EAST_SOUTH_EAST);
+        IMPORT_BLOCKFACES.put((byte) 10, BlockFace.SOUTH_EAST);
+        IMPORT_BLOCKFACES.put((byte) 11, BlockFace.SOUTH_SOUTH_EAST);
+        IMPORT_BLOCKFACES.put((byte) 12, BlockFace.SOUTH);
+        IMPORT_BLOCKFACES.put((byte) 13, BlockFace.SOUTH_SOUTH_WEST);
+        IMPORT_BLOCKFACES.put((byte) 14, BlockFace.SOUTH_WEST);
+        IMPORT_BLOCKFACES.put((byte) 15, BlockFace.WEST_SOUTH_WEST);
+        IMPORT_BLOCKFACES.put((byte) 16, BlockFace.WEST);
+        IMPORT_BLOCKFACES.put((byte) 17, BlockFace.WEST_NORTH_WEST);
+        IMPORT_BLOCKFACES.put((byte) 18, BlockFace.NORTH_WEST);
+        IMPORT_BLOCKFACES.put((byte) 19, BlockFace.NORTH_NORTH_WEST);
         
-        IMPORT_ATTACHED_FACE.put(1, FaceAttachable.AttachedFace.WALL);
-        IMPORT_ATTACHED_FACE.put(2, FaceAttachable.AttachedFace.CEILING);
-        IMPORT_ATTACHED_FACE.put(3, FaceAttachable.AttachedFace.FLOOR);
+        IMPORT_ATTACHED_FACE.put((byte) 1, FaceAttachable.AttachedFace.WALL);
+        IMPORT_ATTACHED_FACE.put((byte) 2, FaceAttachable.AttachedFace.CEILING);
+        IMPORT_ATTACHED_FACE.put((byte) 3, FaceAttachable.AttachedFace.FLOOR);
         
-        IMPORT_RAIL_DIRECTION.put(1, Rail.Shape.NORTH_WEST);
-        IMPORT_RAIL_DIRECTION.put(2, Rail.Shape.NORTH_EAST);
-        IMPORT_RAIL_DIRECTION.put(3, Rail.Shape.EAST_WEST);
-        IMPORT_RAIL_DIRECTION.put(4, Rail.Shape.SOUTH_EAST);
-        IMPORT_RAIL_DIRECTION.put(5, Rail.Shape.SOUTH_WEST);
-        IMPORT_RAIL_DIRECTION.put(6, Rail.Shape.ASCENDING_NORTH);
-        IMPORT_RAIL_DIRECTION.put(7, Rail.Shape.ASCENDING_EAST);
-        IMPORT_RAIL_DIRECTION.put(8, Rail.Shape.ASCENDING_SOUTH);
-        IMPORT_RAIL_DIRECTION.put(9, Rail.Shape.ASCENDING_WEST);
+        IMPORT_RAIL_DIRECTION.put((byte) 1, Rail.Shape.NORTH_WEST);
+        IMPORT_RAIL_DIRECTION.put((byte) 2, Rail.Shape.NORTH_EAST);
+        IMPORT_RAIL_DIRECTION.put((byte) 3, Rail.Shape.EAST_WEST);
+        IMPORT_RAIL_DIRECTION.put((byte) 4, Rail.Shape.SOUTH_EAST);
+        IMPORT_RAIL_DIRECTION.put((byte) 5, Rail.Shape.SOUTH_WEST);
+        IMPORT_RAIL_DIRECTION.put((byte) 6, Rail.Shape.ASCENDING_NORTH);
+        IMPORT_RAIL_DIRECTION.put((byte) 7, Rail.Shape.ASCENDING_EAST);
+        IMPORT_RAIL_DIRECTION.put((byte) 8, Rail.Shape.ASCENDING_SOUTH);
+        IMPORT_RAIL_DIRECTION.put((byte) 9, Rail.Shape.ASCENDING_WEST);
         
-        IMPORT_AXIS.put(1, Axis.X);
-        IMPORT_AXIS.put(2, Axis.Y);
-        IMPORT_AXIS.put(3, Axis.Z);
+        IMPORT_AXIS.put((byte) 1, Axis.X);
+        IMPORT_AXIS.put((byte) 2, Axis.Y);
+        IMPORT_AXIS.put((byte) 3, Axis.Z);
         
-        IMPORT_HALVES.put(1, Bisected.Half.BOTTOM);
-        IMPORT_HALVES.put(2, Bisected.Half.TOP);
+        IMPORT_HALVES.put((byte) 1, Bisected.Half.BOTTOM);
+        IMPORT_HALVES.put((byte) 2, Bisected.Half.TOP);
         
         // We know the mapping 1-to-1 and onto
-        for (int key : IMPORT_BLOCKFACES.keySet()) {
+        for (byte key : IMPORT_BLOCKFACES.keySet()) {
             EXPORT_BLOCKFACES.put(IMPORT_BLOCKFACES.get(key), key);
         }
-        for (int key : IMPORT_ATTACHED_FACE.keySet()) {
+        for (byte key : IMPORT_ATTACHED_FACE.keySet()) {
             EXPORT_ATTACHED_FACE.put(IMPORT_ATTACHED_FACE.get(key), key);
         }
-        for (int key : IMPORT_RAIL_DIRECTION.keySet()) {
+        for (byte key : IMPORT_RAIL_DIRECTION.keySet()) {
             EXPORT_RAIL_DIRECTION.put(IMPORT_RAIL_DIRECTION.get(key), key);
         }
-        for (int key : IMPORT_AXIS.keySet()) {
+        for (byte key : IMPORT_AXIS.keySet()) {
             EXPORT_AXIS.put(IMPORT_AXIS.get(key), key);
         }
-        for (int key : IMPORT_HALVES.keySet()) {
+        for (byte key : IMPORT_HALVES.keySet()) {
             EXPORT_HALVES.put(IMPORT_HALVES.get(key), key);
         }
         
@@ -150,16 +151,16 @@ public class BlockData {
     
     final Vector location;
     final String material;
-    HashMap<Integer, Integer> Attributes;
+    HashMap<Byte, Byte> Attributes;
     
-    public BlockData(String material, int x, int y, int z, Map<Integer, Integer> attributes) {
+    public BlockData(String material, int x, int y, int z, Map<Byte, Byte> attributes) {
         this.material = material;
         this.location = new Vector(x, y, z);
         Attributes = new HashMap<>();
         Attributes.putAll(attributes);
     }
     
-    HashMap<Integer, Method> cachedDataSetters = null;
+    HashMap<Byte, Method> cachedDataSetters = null;
     void cacheBlockDataSetters(Block exampleBlock) {
         cachedDataSetters = new HashMap<>();
         for (var attribute : Attributes.entrySet()) {
@@ -253,7 +254,7 @@ public class BlockData {
             Attributes.put(ATTRIBUTE_ID_DIRECTIONAL, EXPORT_BLOCKFACES.get(((Directional)data).getFacing()));
         }
         if(block.getBlockData() instanceof Ageable) {
-            Attributes.put(ATTRIBUTE_ID_AGE, ((Ageable)data).getAge() + 1);    // age 0 is illegal because it's indistinguishable from no value at all
+            Attributes.put(ATTRIBUTE_ID_AGE, (byte) ((byte) (((Ageable)data).getAge() + 1) & 0xFF));    // age 0 is illegal because it's indistinguishable from no value at all
         }
         if(block.getBlockData() instanceof Attachable) {
             Attributes.put(ATTRIBUTE_ID_ATTACHED, boolValue(((Attachable)data).isAttached()));
@@ -268,7 +269,7 @@ public class BlockData {
             Attributes.put(ATTRIBUTE_ID_HANGING, boolValue(((Hangable)data).isHanging()));
         }
         if(block.getBlockData() instanceof Levelled) {
-            Attributes.put(ATTRIBUTE_ID_LEVEL, ((Levelled)data).getLevel() + 1);    // level 0 is illegal because it's indistinguishable from no value at all
+            Attributes.put(ATTRIBUTE_ID_LEVEL, (byte) ((byte) ((Levelled)data).getLevel() + 1));    // level 0 is illegal because it's indistinguishable from no value at all
         }
         if(block.getBlockData() instanceof Powerable) {
             Attributes.put(ATTRIBUTE_ID_POWERED, boolValue(((Powerable)data).isPowered()));
@@ -290,8 +291,11 @@ public class BlockData {
         }
     }
     
-    private int boolValue(boolean bool) {
-        return bool ? 1 : 0;
+    private byte boolValue(boolean bool) {
+        return bool ? (byte) 1 : (byte) 0;
+    }
+    private boolean boolValue(byte i) {
+        return i != 0;
     }
     private boolean boolValue(int i) {
         return i != 0;

@@ -57,10 +57,16 @@ public class SchematicFactory {
 	}
 	
 	public void writeToFile() {
-		File schemFile = new File(TardisPlugin.singleton.getDataFolder() + "/schematics/", schematicName + ".schem");
+		writeToFile(false);
+	}
+	public void writeToFile(boolean overrideFile) {
+		File schemFile = new File(TardisPlugin.singleton.getDataFolder() + "/schematics/", schematicName + Schematic.FILE_ENDING);
 		if (schemFile.exists()) {
-			Bukkit.getLogger().severe(String.format("Could not write to file %s.schem: File already exists.", schematicName));
-			return;
+			if (!overrideFile) {
+				Bukkit.getLogger().severe(String.format("Could not write to file %s.schem: File already exists.", schematicName));
+				return;
+			}
+			schemFile.delete();
 		}
 		File dir = new File(TardisPlugin.singleton.getDataFolder() + "/schematics/");
 		if (!dir.exists()) if (!dir.mkdirs()) {
