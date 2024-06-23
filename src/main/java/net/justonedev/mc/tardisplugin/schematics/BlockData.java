@@ -32,7 +32,6 @@ public class BlockData {
     // Save attributes whose values can be saved in a single byte.
     
     
-    // When updating these, remember to update isAttributeIntegerType(int)
     private static final byte ATTRIBUTE_ID_WATERLOGGED = 1;  // Boolean
     private static final byte ATTRIBUTE_ID_DIRECTIONAL = 2;  // Direction (Blockface)
     private static final byte ATTRIBUTE_ID_AGE = 3;          // Int

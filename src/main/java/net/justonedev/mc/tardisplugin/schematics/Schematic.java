@@ -21,7 +21,10 @@ public class Schematic {
 			Bukkit.getLogger().warning("Couldn't find file " + saveFile.getAbsolutePath());
 			return;
 		}
-		readFile(saveFile);
+		//new Thread(() -> {
+		//	Bukkit.getLogger().info("Starting new Thread for construction of schematic " + saveFile.getName());
+			readFile(saveFile);
+		//}).start();
 	}
 	
 	public void placeInWorld(Location where) {

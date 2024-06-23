@@ -56,7 +56,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("spawnmodel").setExecutor(this);
         getCommand("tptardisworld").setExecutor(this);
         getCommand("home").setExecutor(this);
-        getCommand("schematic").setExecutor(this);
+        getCommand("makeschematic").setExecutor(this);
         getCommand("buildschematic").setExecutor(this);
         getCommand("breakdownschematic").setExecutor(this);
         getCommand("test").setExecutor(this);
@@ -148,13 +148,14 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             Location loc = p.getRespawnLocation();
             if (loc == null) loc = Bukkit.getWorlds().get(0).getSpawnLocation();
             p.teleport(loc);
-        } else if (command.getName().equals("schematic")) {
+        } else if (command.getName().equals("makeschematic")) {
             String name = args[0];
             Location firstLoc = new Location(p.getWorld(), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
             Location secondLoc = new Location(p.getWorld(), Integer.parseInt(args[4]), Integer.parseInt(args[5]), Integer.parseInt(args[6]));
             boolean captureAir = false;
             if (args.length > 7) captureAir = Boolean.parseBoolean(args[7]);
-            new SchematicFactory(name, firstLoc, secondLoc, captureAir).writeToFile();
+            
+            SchematicFactory.createSchematicAsync(name, firstLoc, secondLoc, captureAir);
         } else if (command.getName().equals("buildschematic")) {
             File file = new File(getDataFolder() + "/schematics/", args[0] + Schematic.FILE_ENDING);
             if (!file.exists()) {

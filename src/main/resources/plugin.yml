@@ -7,7 +7,7 @@ commands:
   spawnmodel:
   tptardisworld:
   home:
-  schematic:
+  makeschematic:
   buildschematic:
   breakdownschematic:
   test:

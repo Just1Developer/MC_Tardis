@@ -19,17 +19,20 @@ import java.util.Set;
 
 public class SchematicFactory {
 
+	private static final int NANO_TO_MILLI_TIME = 1000000;
+	
 	final String schematicName;
 	List<Cluster> clusters;
 	final boolean captureAir;
 	
 	public SchematicFactory(String schematicName, Location _startPoint, Location _endPoint, boolean captureAir) {
+		this.schematicName = schematicName;
+		this.captureAir = captureAir;
 		Map<Material, List<BlockData>> blockData;
 		Map<Material, List<StructureCorner>> structureCorners;
 		Map<Material, Set<Quader>> allQuaders;
 		
-		this.schematicName = schematicName;
-		this.captureAir = captureAir;
+		Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Creating location bounds...");
 		if ((_startPoint.getWorld() != null && !_startPoint.getWorld().equals(_endPoint.getWorld())) || (_endPoint.getWorld() != null && !_endPoint.getWorld().equals(_startPoint.getWorld()))) {
 			Bukkit.getLogger().severe("Error while trying to create schematic: Start and Endpoint are not in the same world. Will not be creating a schematic");
 			return;
@@ -45,15 +48,39 @@ public class SchematicFactory {
 				Math.max(_startPoint.getBlockY(), _endPoint.getBlockY()) - minLocation.getBlockY() + 1,
 				Math.max(_startPoint.getBlockZ(), _endPoint.getBlockZ()) - minLocation.getBlockZ() + 1
 		);
+		Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scanning environment...");
+		long oldtime = System.nanoTime();
 		blockData = scanEnvironment(minLocation, bounds);
+		long time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scan completed in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Finding corners..."); oldtime = time;
 		structureCorners = findCorners(blockData);
+		time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Found all corners in " + (( - oldtime) / NANO_TO_MILLI_TIME) + " ms. Creating quaders..."); oldtime = time;
 		allQuaders = findAllQuaders(blockData, structureCorners);
+		time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Quaders created in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Making clusters..."); oldtime = time;
 		
 		// Make all same quaders into clusters
 		clusters = new ArrayList<>();
 		for (var quaders : allQuaders.values()) {
 			clusters.add(new Cluster(quaders));
 		}
+		time = System.nanoTime();
+		Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Cluster creation complete in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms.");
+	}
+	
+	/**
+	 * Recommended for larger structures
+	 * @param schematicName
+	 * @param _startPoint
+	 * @param _endPoint
+	 * @param captureAir
+	 */
+	public static void createSchematicAsync(String schematicName, Location _startPoint, Location _endPoint, boolean captureAir) {
+		new Thread(() -> {
+			long time = System.nanoTime();
+			Bukkit.getLogger().info("Starting new Thread for creation of schematic " + schematicName);
+			SchematicFactory schem = new SchematicFactory(schematicName, _startPoint, _endPoint, captureAir);
+			schem.writeToFile();
+			Bukkit.getLogger().info("Total time: " + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms");
+		}).start();
 	}
 	
 	public void writeToFile() {
@@ -77,6 +104,10 @@ public class SchematicFactory {
 			schemFile.createNewFile();
 			FileOutputStream fos = new FileOutputStream(schemFile);
 			int byteCount = 0;
+			
+			Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Begin writing clusters to file...");
+			long time = System.nanoTime();
+			
 			for (Cluster cluster : clusters) {
 				var bytes = cluster.encode();
 				byteCount += bytes.length;
@@ -84,6 +115,7 @@ public class SchematicFactory {
 			}
 			fos.flush();
 			fos.close();
+			Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Complete (" + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms).");
 			Bukkit.getLogger().info("Created schematic " + schemFile.getName() + " with " + byteCount + " bytes");
 		} catch (IOException e) {
 			Bukkit.getLogger().severe(String.format("An error occured while trying to create schematic file %s.schem", schematicName));
