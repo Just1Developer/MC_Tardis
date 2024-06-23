@@ -1,5 +1,6 @@
 package net.justonedev.mc.tardisplugin;
 
+import net.justonedev.mc.tardisplugin.schematics.Schematic;
 import net.justonedev.mc.tardisplugin.schematics.SchematicFactory;
 import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
@@ -145,12 +146,13 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             if (args.length > 7) captureAir = Boolean.parseBoolean(args[7]);
             new SchematicFactory(name, firstLoc, secondLoc, captureAir).writeToFile();
         } else if (command.getName().equals("buildschematic")) {
-            File file = new File(getDataFolder() + "schematics/", args[0] + ".schem");
+            File file = new File(getDataFolder() + "/schematics/", args[0] + ".schem");
             if (!file.exists()) {
                 p.sendMessage("Couldn't find file " + file.getAbsolutePath());
                 return true;
             }
-            
+            Schematic schematic = new Schematic(file);
+            schematic.placeInWorld(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
         }
         return true;
     }

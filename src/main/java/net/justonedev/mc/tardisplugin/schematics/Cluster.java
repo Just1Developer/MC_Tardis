@@ -273,6 +273,7 @@ public class Cluster {
     
     private static Pair<Integer, Integer> readNumber(int currentIndex, int bytes, List<Byte> list) {
         int value = 0;
+        System.out.println("Attempting to read " + bytes + " bytes at index " + currentIndex + " for a list of size " + list.size());
         for (int place = 0; place < bytes; ++place) {
             int next = list.get(currentIndex++);
             value |= (next) << 8 * (bytes - place - 1);
