@@ -56,6 +56,7 @@ public class Cluster {
     }
     
     public void placeInWorld(Location anchorLocation) {
+        Bukkit.broadcastMessage("[Cluster] PlaceInWorld: " + anchorLocation);
         for (var q : quaders) q.placeInWorld(anchorLocation);
     }
 
@@ -221,16 +222,16 @@ public class Cluster {
         while (true) {
             Pair<Integer, Integer> readNumberResult;
             // Read different quader shapes here
-            readNumberResult = readNumber(index, boundsBytes, bytes);
+            readNumberResult = readNumber(index, boundsBytes, bytes, true);
             index = readNumberResult.value1;
             int bounds1 = readNumberResult.value2;
             if (bounds1 == TERMINATOR_BYTE) break;
             
-            readNumberResult = readNumber(index, boundsBytes, bytes);
+            readNumberResult = readNumber(index, boundsBytes, bytes, false);
             index = readNumberResult.value1;
             int bounds2 = readNumberResult.value2;
             
-            readNumberResult = readNumber(index, boundsBytes, bytes);
+            readNumberResult = readNumber(index, boundsBytes, bytes, false);
             index = readNumberResult.value1;
             int bounds3 = readNumberResult.value2;
             
@@ -240,16 +241,16 @@ public class Cluster {
                 // read single quaders with the same shape here.
                 Map<Integer, Integer> attributeValues = new HashMap<>();
                 // Read different quader shapes here
-                readNumberResult = readNumber(index, coordBytes, bytes);
+                readNumberResult = readNumber(index, coordBytes, bytes, true);
                 index = readNumberResult.value1;
                 int x = readNumberResult.value2;
                 if (x == TERMINATOR_BYTE) break;
                 
-                readNumberResult = readNumber(index, Math.min(coordBytes, 2), bytes);
+                readNumberResult = readNumber(index, Math.min(coordBytes, 2), bytes, false);
                 index = readNumberResult.value1;
                 int y = readNumberResult.value2;
                 
-                readNumberResult = readNumber(index, coordBytes, bytes);
+                readNumberResult = readNumber(index, coordBytes, bytes, false);
                 index = readNumberResult.value1;
                 int z = readNumberResult.value2;
                 
@@ -271,11 +272,11 @@ public class Cluster {
         return new Cluster(quaders);
     }
     
-    private static Pair<Integer, Integer> readNumber(int currentIndex, int bytes, List<Byte> list) {
+    private static Pair<Integer, Integer> readNumber(int currentIndex, int bytes, List<Byte> list, boolean lookoutForTerminatorByte) {
         int value = 0;
-        System.out.println("Attempting to read " + bytes + " bytes at index " + currentIndex + " for a list of size " + list.size());
         for (int place = 0; place < bytes; ++place) {
             int next = list.get(currentIndex++);
+            if (lookoutForTerminatorByte && place == 0 && next == TERMINATOR_BYTE) return new Pair<>(currentIndex, (int) TERMINATOR_BYTE);
             value |= (next) << 8 * (bytes - place - 1);
         }
         return new Pair<>(currentIndex, value);

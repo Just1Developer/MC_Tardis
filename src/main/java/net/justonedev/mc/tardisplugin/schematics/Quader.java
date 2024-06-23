@@ -58,8 +58,8 @@ public class Quader {
     
     public void placeInWorld(Location anchorPosition) {
         Location anchor = anchorPosition.clone().add(quaderData.location);
-        if (anchor.getWorld() != null) {
-            Bukkit.getLogger().severe("placeInWorld called on Quader, but world was null.");
+        if (anchor.getWorld() == null) {
+            Bukkit.getLogger().severe("placeInWorld called on Quader, but world was null. Location: " + anchorPosition);
             return;
         }
         if (!anchor.isWorldLoaded()) {
@@ -72,9 +72,9 @@ public class Quader {
         headBlock.setType(quaderData.material);
         quaderData.cacheBlockDataSetters(headBlock);
         
-        for (int x = anchor.getBlockX(); x <= bounds.getBlockX(); ++x, writeHead.add(1, 0, 0)) {
-            for (int y = anchor.getBlockY(); y <= bounds.getBlockY(); ++y, writeHead.add(0, 1, 0)) {
-                for (int z = anchor.getBlockZ(); z <= bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
+        for (int x = 0; x <= bounds.getBlockX(); ++x, writeHead.add(1, 0, 0)) {
+            for (int y = 0; y <= bounds.getBlockY(); ++y, writeHead.add(0, 1, 0)) {
+                for (int z = 0; z <= bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
                     Block b = anchor.getWorld().getBlockAt(writeHead);
                     applyWholeBlockData(b);
                 }
@@ -86,6 +86,7 @@ public class Quader {
     
     private void applyWholeBlockData(Block block) {
         block.setType(quaderData.material);
+        Bukkit.broadcastMessage(String.format("Setting block to %s @ (%s, %d, %d, %d)", quaderData.material, block.getWorld().getName(), block.getLocation().getBlockX(), block.getLocation().getBlockY(), block.getLocation().getBlockZ()));
         quaderData.applyAllAttributesTo(block);
     }
     

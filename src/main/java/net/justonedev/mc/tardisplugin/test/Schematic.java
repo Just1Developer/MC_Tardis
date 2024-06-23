@@ -12,6 +12,8 @@ public class Schematic {
 	
 	List<Cluster> clusters;
 	
+	// Dev note: {Quader: bounds: {Val1: 2, Val2: 2, Val3: 2, Orientation: 1}, location: {x: -18, y: -71, z: -99}, data: {material: SEA_LANTERN, ...}}
+	
 	public Schematic(File saveFile) {
 		clusters = new ArrayList<>();
 		if (!saveFile.exists()) {
