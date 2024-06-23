@@ -9,3 +9,4 @@ commands:
   home:
   schematic:
   buildschematic:
+  test:

@@ -295,7 +295,9 @@ public class Cluster {
 					byte attributeValue = bytes.get(index++);
 					Bukkit.broadcastMessage("Read attribute " + count + " at " + (index-1) + " with value " + attributeValue);
                     if (attributeValue == 0) continue;
-                    attributeValues.put(existingAttributes.get(count), attributeValue);
+                    var attributeKey = existingAttributes.get(count);
+                    // Todo remove, its covered || if (BlockData.isAttributeIntegerType(attributeKey)) attributeValue--;
+                    attributeValues.put(attributeKey, attributeValue);
                 }
                 
                 // Now we have (the bounds), the coords, the orientation and the attributes.

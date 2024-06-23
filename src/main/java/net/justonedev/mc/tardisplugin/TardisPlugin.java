@@ -11,6 +11,11 @@ import net.justonedev.mc.tardisplugin.tardis.TardisWorldGen;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Waterlogged;
+import org.bukkit.block.data.type.Stairs;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
@@ -53,6 +58,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("home").setExecutor(this);
         getCommand("schematic").setExecutor(this);
         getCommand("buildschematic").setExecutor(this);
+        getCommand("test").setExecutor(this);
         
         BlockData.init();
 
@@ -156,6 +162,31 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             }
             Schematic schematic = new Schematic(file);
             schematic.placeInWorld(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
+        } else if (command.getName().equals("test")) {
+            Block b = p.getLocation().clone().add(1, 0, 0).getBlock();
+            b.setType(Material.OAK_STAIRS);
+            var wdata = (Waterlogged) b.getBlockData();
+            wdata.setWaterlogged(true);
+            b.setBlockData(wdata);
+            var rdata = (Directional) b.getBlockData();
+            rdata.setFacing(BlockFace.NORTH);
+            b.setBlockData(rdata);
+            
+            Block b2 = p.getLocation().clone().add(4, 0, 0).getBlock();
+            b2.setType(Material.OAK_STAIRS);
+            var wdata2 = (Waterlogged) b2.getBlockData();
+            wdata2.setWaterlogged(true);
+            b2.setBlockData(wdata2);
+            var rdata2 = (Directional) b2.getBlockData();
+            rdata2.setFacing(BlockFace.WEST);
+            b2.setBlockData(rdata2);
+            
+            Block b3 = p.getLocation().clone().add(2, 1, 0).getBlock();
+            b3.setType(Material.OAK_STAIRS);
+            var sdata3 = (Stairs) b3.getBlockData();
+            sdata3.setWaterlogged(true);
+            sdata3.setFacing(BlockFace.WEST);
+            b3.setBlockData(sdata3);
         }
         return true;
     }

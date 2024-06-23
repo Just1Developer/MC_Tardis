@@ -23,6 +23,7 @@ import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +32,8 @@ public class BlockData {
 
     // Save attributes whose values can be saved in a single byte.
     
+    
+    // When updating these, remember to update isAttributeIntegerType(int)
     private static final byte ATTRIBUTE_ID_WATERLOGGED = 1;  // Boolean
     private static final byte ATTRIBUTE_ID_DIRECTIONAL = 2;  // Direction (Blockface)
     private static final byte ATTRIBUTE_ID_AGE = 3;          // Int
@@ -121,19 +124,19 @@ public class BlockData {
         }
         
         BlockDataInterfaceMap = new HashMap<>();
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_WATERLOGGED, Waterlogged.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_DIRECTIONAL, Directional.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_AGE, Ageable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ATTACHED, Attachable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_FACE_ATTACHABLE, FaceAttachable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_HANGING, Hangable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_LEVEL, Levelled.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_POWERED, Powerable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_RAIL, Rail.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_LIT, Lightable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ORIENTATION, Orientable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ROTATION, Rotatable.class);
-        BlockDataInterfaceMap.put(ATTRIBUTE_ID_BISECTED_HALF, Bisected.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_WATERLOGGED, org.bukkit.block.data.Waterlogged.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_DIRECTIONAL, org.bukkit.block.data.Directional.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_AGE, org.bukkit.block.data.Ageable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ATTACHED, org.bukkit.block.data.Attachable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_FACE_ATTACHABLE, org.bukkit.block.data.FaceAttachable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_HANGING, org.bukkit.block.data.Hangable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_LEVEL, org.bukkit.block.data.Levelled.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_POWERED, org.bukkit.block.data.Powerable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_RAIL, org.bukkit.block.data.Rail.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_LIT, org.bukkit.block.data.Lightable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ORIENTATION, org.bukkit.block.data.Orientable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_ROTATION, org.bukkit.block.data.Rotatable.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_BISECTED_HALF, org.bukkit.block.data.Bisected.class);
         
         BlockDataSetterMethods = new HashMap<>();
         BlockDataSetterMethods.put(ATTRIBUTE_ID_WATERLOGGED, "setWaterlogged");
@@ -149,6 +152,10 @@ public class BlockData {
         BlockDataSetterMethods.put(ATTRIBUTE_ID_ORIENTATION, "setAxis");
         BlockDataSetterMethods.put(ATTRIBUTE_ID_ROTATION, "setRotation");
         BlockDataSetterMethods.put(ATTRIBUTE_ID_BISECTED_HALF, "setHalf");
+    }
+    
+    static boolean isAttributeIntegerType(int attributeID) {
+        return attributeID == ATTRIBUTE_ID_AGE || attributeID == ATTRIBUTE_ID_LEVEL;
     }
     
     final Vector location;
@@ -198,11 +205,16 @@ public class BlockData {
         cachedDataSetters = new HashMap<>();
         for (var attribute : Attributes.entrySet()) {
             try {
-                var data = castBlockData(BlockDataInterfaceMap.get(attribute.getKey()), exampleBlock.getBlockData());
+                //var data = castBlockData(BlockDataInterfaceMap.get(attribute.getKey()), exampleBlock.getBlockData());
+                var data = exampleBlock.getBlockData();
                 var attributeValue = getRealAttributeValue(attribute.getKey(), attribute.getValue());
                 if (attributeValue == null) throw new NoSuchMethodException();  // Go to error block
                 
-                Method setter = data.getClass().getMethod(BlockDataSetterMethods.get(attribute.getKey()), attributeValue.getClass());
+                //Bukkit.broadcastMessage(String.format("§dSetter method (v1): data.getClass().getMethod(BlockDataSetterMethods.get(%s), %s)", attribute.getKey(), attributeValue.getClass()));
+                //Bukkit.broadcastMessage(String.format("§dSetter method (v2): %s.getMethod(%s, %s)", data.getClass(), BlockDataSetterMethods.get(attribute.getKey()), attributeValue.getClass()));
+                //Bukkit.broadcastMessage("§bInterfaces implemented: " + Arrays.toString(exampleBlock.getBlockData().getClass().getInterfaces()));
+                //printAllMethods(data);
+                Method setter = data.getClass().getMethod(BlockDataSetterMethods.get(attribute.getKey()), classOfType(attributeValue));
                 cachedDataSetters.put(attribute.getKey(), setter);
             } catch (NoSuchMethodException | IllegalArgumentException e) {
                 Bukkit.getLogger().warning(String.format("[Quader setter caching: %s @ (%s, %d, %d, %d)] Error getting attribute setter: %s",
@@ -213,6 +225,36 @@ public class BlockData {
                         exampleBlock.getLocation().getBlockZ(),
                         e.getMessage()));
             }
+        }
+    }
+    
+    private static Class<?> classOfType(Object o) {
+        var _class = o.getClass();
+        if (_class.equals(Integer.class)) {
+            return int.class;
+        } else if (_class.equals(Boolean.class)) {
+            return boolean.class;
+        } else if (_class.equals(Byte.class)) {
+            return byte.class;
+        } else if (_class.equals(Short.class)) {
+            return short.class;
+        } else if (_class.equals(Long.class)) {
+            return long.class;
+        } else {
+            return _class;
+        }
+    }
+    
+    // Todo broadcast
+    private void printAllMethods(Object obj) {
+        Class<?> clazz = obj.getClass();
+        
+        // Get all methods from the class and its superclasses
+        Method[] methods = clazz.getMethods();
+        
+        // Print each method name and its parameter types
+        for (Method method : methods) {
+            Bukkit.broadcastMessage("§bMethod: " + method.getName() + ", Parameter Types: " + Arrays.toString(method.getParameterTypes()));
         }
     }
     
@@ -227,6 +269,7 @@ public class BlockData {
         }
         
         for (var attribute : Attributes.entrySet()) {
+            Bukkit.broadcastMessage(String.format("§eWill apply attribute %s with value %s to block (%s @ %d %d %d)", attribute.getKey(), attribute.getValue(), block.getType().name(), block.getLocation().getBlockX(), block.getLocation().getBlockY(), block.getLocation().getBlockZ()));
             try {
                 var setter = cachedDataSetters.getOrDefault(attribute.getKey(), null);
                 if (setter == null) throw new NoSuchMethodException();
@@ -234,6 +277,8 @@ public class BlockData {
                 var data = castBlockData(BlockDataInterfaceMap.get(attribute.getKey()), block.getBlockData());
                 var attributeValue = getRealAttributeValue(attribute.getKey(), attribute.getValue());
                 setter.invoke(data, attributeValue);
+                block.setBlockData(data);
+                block.getState().update(false);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                 Bukkit.getLogger().warning(String.format("[Quader application: %s @ (%s, %d, %d, %d)] Error applying attribute: %s",
                         material.name(),
@@ -246,7 +291,7 @@ public class BlockData {
         }
     }
     
-    private Object getRealAttributeValue(int key, int value) {
+    private Object getRealAttributeValue(byte key, byte value) {
         switch (key) {
             case ATTRIBUTE_ID_DIRECTIONAL:
             case ATTRIBUTE_ID_ROTATION:
