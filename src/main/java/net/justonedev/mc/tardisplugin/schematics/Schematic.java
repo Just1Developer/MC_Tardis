@@ -59,11 +59,8 @@ public class Schematic {
 			Material.BIRCH_PLANKS, Material.JUNGLE_PLANKS, Material.ACACIA_PLANKS,
 			Material.DARK_OAK_PLANKS, Material.OAK_LOG, Material.SPRUCE_LOG,
 			Material.BIRCH_LOG, Material.JUNGLE_LOG, Material.ACACIA_LOG,
-			Material.DARK_OAK_LOG, Material.SAND, Material.RED_SAND,
-			Material.GRAVEL, Material.GOLD_ORE, Material.IRON_ORE,
-			Material.COAL_ORE, Material.NETHER_GOLD_ORE, Material.OAK_LEAVES,
-			Material.SPRUCE_LEAVES, Material.BIRCH_LEAVES, Material.JUNGLE_LEAVES,
-			Material.ACACIA_LEAVES, Material.DARK_OAK_LEAVES, Material.SPONGE,
+			Material.DARK_OAK_LOG, Material.GOLD_ORE, Material.IRON_ORE,
+			Material.COAL_ORE, Material.NETHER_GOLD_ORE, Material.SPONGE,
 			Material.GLASS, Material.LAPIS_ORE, Material.LAPIS_BLOCK,
 			Material.DISPENSER, Material.SANDSTONE, Material.NOTE_BLOCK,
 	};
