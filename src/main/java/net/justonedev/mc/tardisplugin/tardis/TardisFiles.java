@@ -35,9 +35,9 @@ public class TardisFiles {
 
         cfg.set("owner", tardis.getOwnerUUIDString());
         cfg.set("uuid", tardis.getTardisUUIDString());
-        cfg.set("outer-shell", tardis.getOuterShellDesignIndex());
-        final UUID modelUUID = tardis.getCurrentModelTardisUUID();
-        cfg.set("presence", modelUUID == null ? "" : modelUUID.toString());
+        cfg.set("outer-shell-design", tardis.getOuterShellDesignIndex());
+        final var modelUUID = tardis.getTardisOuterShellUUID();
+        cfg.set("presence", modelUUID.isEmpty() ? "" : modelUUID.get().toString());
 
         try {
             cfg.save(file);
@@ -68,7 +68,7 @@ public class TardisFiles {
         if (tempString == null) tempString = "";
         UUID tardisUUID = UUID.fromString(tempString);
 
-        int outerShellIndex = cfg.getInt("outer-shell");
+        int outerShellIndex = cfg.getInt("outer-shell-design");
         int plotID = cfg.getInt("plotID");
 
         // Insert in map is done in constructor

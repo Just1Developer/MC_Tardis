@@ -5,6 +5,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -30,8 +32,12 @@ public class Tardis {
     private final TardisInteriorPlot interiorPlot;
     private final Location spawnLocation;
 
-    private ArmorStand currentModelTardis;
-    private ArmorStand currentModelDoor;
+    private UUID tardisOuterShellUUID;
+    private Location tardisOuterShellLocation;
+    private Vector tardisOuterShellDirection;
+    private Location tardisOuterShellSpawnLocation;
+
+    private TardisCharger tardisCharger;
 
     private TardisConsole tardisConsole;
 
@@ -49,8 +55,8 @@ public class Tardis {
         spawnLocation = new Location(loc.getWorld(), loc.getBlockX() - 10.5, loc.getY(), loc.getBlockZ() + 0.5, 0, 0);
 
         TardisPlugin.singleton.tardises.put(interiorPlotID, this);
+        tardisCharger = new TardisCharger(this);
     }
-    int i = 0;
 
     public static Tardis createNewTardis(UUID owner) {
         UUID uuid = UUID.randomUUID();
@@ -60,8 +66,12 @@ public class Tardis {
     }
 
     public void spawnTardis(Location where) {
-        currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
-        bindCurrentModelTardis(currentModelTardis.getUniqueId(), false);
+        var currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
+        tardisOuterShellUUID = currentModelTardis.getUniqueId();
+        tardisOuterShellLocation = currentModelTardis.getLocation();
+        tardisOuterShellDirection = currentModelTardis.getLocation().getDirection();
+        tardisOuterShellSpawnLocation = tardisOuterShellLocation.clone().add(tardisOuterShellDirection);
+        bindCurrentModelTardis(tardisOuterShellUUID, false);
     }
 
     public void setShellModelData(int modelData) {
@@ -89,14 +99,24 @@ public class Tardis {
     }
 
     public void despawnTardis() {
-        //TardisPlugin.singleton.tardisesByEntityUUID.remove(currentModelDoor.getUniqueId());
+        if (tardisOuterShellUUID == null) return;
+        if (tardisOuterShellLocation == null) return;
+        if (tardisOuterShellLocation.getWorld() == null) return;
+
+        tardisOuterShellLocation.getWorld().loadChunk(tardisOuterShellLocation.getChunk());
+        Entity currentModelTardis = Bukkit.getEntity(tardisOuterShellUUID);
+
+        if (currentModelTardis == null) {
+            Bukkit.getLogger().warning("Despawning of tardis @ " + tardisOuterShellLocation + " failed, could not get bound entity.");
+            return;
+        }
+
         TardisPlugin.singleton.tardisesByEntityUUID.remove(currentModelTardis.getUniqueId());
         currentModelTardis.remove();
-        //currentModelDoor.remove();
     }
     
-    UUID getCurrentModelTardisUUID() {
-        return currentModelTardis == null ? null : currentModelTardis.getUniqueId();
+    Optional<UUID> getTardisOuterShellUUID() {
+        return Optional.of(tardisOuterShellUUID);
     }
     
     /**
@@ -104,9 +124,8 @@ public class Tardis {
      * Returns a vector (0,0,0) when anything is null.
      * @return A copy of a direction vector of the tardis shell.
      */
-    Vector getCurrentModelDirectionVector() {
-        if (currentModelTardis == null) return new Vector(0, 0, 0);
-        return currentModelTardis.getLocation().getDirection().clone();
+    Optional<Vector> getCurrentModelDirectionVector() {
+        return Optional.of(tardisOuterShellDirection);
     }
     
     /**
@@ -114,7 +133,31 @@ public class Tardis {
      * @return The tardis entity or empty optional.
      */
     Optional<ArmorStand> getCurrentModelTardis() {
-        return currentModelTardis == null ? Optional.empty() : Optional.of(currentModelTardis);
+        return getCurrentModelTardis(tardisOuterShellLocation, tardisOuterShellUUID);
+    }
+
+    /**
+     * Gets the tardis entity or an empty optional if the tardis is not present in the 'real' world.
+     * @return The tardis entity or empty optional.
+     */
+    private Optional<ArmorStand> getCurrentModelTardis(Location tardisOuterShellLocation, UUID tardisOuterShellUUID) {
+        if (tardisOuterShellUUID == null) return Optional.empty();
+        if (tardisOuterShellLocation == null) return Optional.empty();
+        if (tardisOuterShellLocation.getWorld() == null) return Optional.empty();
+
+        tardisOuterShellLocation.getWorld().loadChunk(tardisOuterShellLocation.getChunk());
+        Entity currentModelTardis = Bukkit.getEntity(tardisOuterShellUUID);
+        if (currentModelTardis == null) return Optional.empty();
+        if (currentModelTardis.getType() != EntityType.ARMOR_STAND) return Optional.empty();
+        return Optional.of((ArmorStand) currentModelTardis);
+    }
+
+    /**
+     * Gets the location of the tardises' outer shell or an empty optional if the tardis is not present in the 'real' world.
+     * @return The tardis shell location or empty optional.
+     */
+    Optional<Location> getOuterShellLocation() {
+        return tardisOuterShellLocation == null ? Optional.empty() : Optional.of(tardisOuterShellLocation);
     }
     
     void bindCurrentModelTardis(UUID armorStandUUID) {
@@ -128,29 +171,13 @@ public class Tardis {
         // Todo: Or save shell location
         
         if (armorStandUUID == null) return;
-        if (overrideModel) this.currentModelTardis = (ArmorStand) Bukkit.getEntity(armorStandUUID);
+        if (overrideModel) this.tardisOuterShellUUID = armorStandUUID;
         TardisPlugin.singleton.tardisesByEntityUUID.put(armorStandUUID, this);
+
+        tardisCharger.startCheckingForCharge();
+
         // Todo if the model data suggests disappearing animation, remove and do not bind
         // Todo if the model data suggests appearing animation, just set the tardis there.
-        
-        
-        int[] nums = { 2500, 2501, 2502, 2503, 2504 };
-        i = 0;
-        //Bukkit.broadcastMessage("§5Current model: " + currentModelTardis);
-        //System.out.println("§5Current model: " + currentModelTardis);
-        if (this.currentModelTardis != null) {
-            Bukkit.broadcastMessage("§cStarting scheduler");
-            System.out.println("§cStarting scheduler");
-            Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
-                //Bukkit.broadcastMessage("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
-                //System.out.println("Setting data to " + nums[i] + " for tardis at " + currentModelTardis.getLocation());
-                setShellModelData(nums[i]);
-                //Bukkit.broadcastMessage("Model data now: " + getShellModelData());
-                //System.out.println("Model data now: " + getShellModelData());
-                i++;
-                if (i >= nums.length) i = 0;
-            }, 20, 20);
-        }
     }
 
     /**
