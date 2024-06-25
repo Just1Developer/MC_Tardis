@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin;
 
 import net.justonedev.mc.tardisplugin.schematics.BlockData;
+import net.justonedev.mc.tardisplugin.schematics.BlockMetaDataInjection;
 import net.justonedev.mc.tardisplugin.schematics.Schematic;
 import net.justonedev.mc.tardisplugin.schematics.SchematicFactory;
 import net.justonedev.mc.tardisplugin.schematics.SchematicMaker;
@@ -22,7 +23,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
@@ -86,6 +89,15 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     public void onDisable() {
         // Plugin shutdown logic
         TardisFiles.saveAll();
+    }
+
+    /**
+     * This is for testing of the schematic data injection.
+     * @param event The event.
+     */
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Bukkit.broadcastMessage("OWNER: " + BlockUtils.getTardisBlockOwnership(event.getBlock()));
     }
     
     public static ArmorStand spawnModel(Location _loc, TardisModelType modelType) {
@@ -195,7 +207,10 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
                 return true;
             }
             Schematic schematic = new Schematic(file);
-            schematic.placeInWorld(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
+            (args[0].startsWith("tardis") ? schematic.with(new BlockMetaDataInjection(Material.AIR)
+                    .addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE))
+                    : schematic)
+                    .placeInWorld(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
         } else if (command.getName().equals("breakdownschematic")) {
             File file = new File(getDataFolder() + "/schematics/", args[0] + Schematic.FILE_ENDING);
             if (!file.exists()) {

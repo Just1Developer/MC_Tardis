@@ -1,5 +1,6 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
+import net.justonedev.mc.tardisplugin.TardisPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -8,32 +9,64 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Schematic {
 	
 	public static String FILE_ENDING = ".tschem";
+
+	private final InjectionSet Injections;
 	List<Cluster> clusters;
-	
+
+	public Schematic(String schematicName) {
+		this(new File(TardisPlugin.singleton.getDataFolder() + "/schematics/", schematicName + FILE_ENDING));
+	}
 	public Schematic(File saveFile) {
+		Injections = new InjectionSet();
 		clusters = new ArrayList<>();
 		if (!saveFile.exists()) {
 			Bukkit.getLogger().warning("Couldn't find file " + saveFile.getAbsolutePath());
 			return;
 		}
-		//new Thread(() -> {
-		//	Bukkit.getLogger().info("Starting new Thread for construction of schematic " + saveFile.getName());
-			readFile(saveFile);
-		//}).start();
+		readFile(saveFile);
+	}
+
+	public Schematic with(BlockMetaDataInjection injection) {
+		Injections.add(injection);
+		return this;
+	}
+
+	public Schematic with(Collection<BlockMetaDataInjection> injections) {
+		Injections.addAll(injections);
+		return this;
+	}
+
+	public Schematic without(BlockMetaDataInjection injection) {
+		Injections.remove(injection);
+		return this;
+	}
+
+	public Schematic withoutAll(Collection<BlockMetaDataInjection> injections) {
+		Injections.removeAll(injections);
+		return this;
+	}
+
+	public Set<BlockMetaDataInjection> getInjections() {
+		return Injections.stream().collect(Collectors.toUnmodifiableSet());
 	}
 	
-	public void placeInWorld(Location where) {
-		for (var cluster : clusters) cluster.placeInWorld(where);
+	public Schematic placeInWorld(Location where) {
+		for (var cluster : clusters) cluster.placeInWorld(where, Injections.where(cluster.material, true));
 		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
 				where.getWorld() == null ? "unknown" : where.getWorld().getName(),
 				where.getBlockX(),
 				where.getBlockY(),
 				where.getBlockZ()));
+		return this;
 	}
 	
 	static Material[] breakdownMaterials = {

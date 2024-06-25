@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,8 +52,12 @@ public class Cluster {
         else material = null;
     }
     
-    public void placeInWorld(Location anchorLocation) {
-        for (var q : quaders) q.placeInWorld(anchorLocation);
+    void placeInWorld(Location anchorLocation) {
+        placeInWorld(anchorLocation, null);
+    }
+
+    void placeInWorld(Location anchorLocation, Collection<BlockMetaDataInjection> injections) {
+        for (var q : quaders) q.placeInWorld(anchorLocation, injections);
     }
     
     public int placeBreakdown(Location anchorLocation, int materialIndex) {

@@ -20,8 +20,8 @@ import static net.justonedev.mc.tardisplugin.tardis.TardisWorldGen.PLOT_CENTER;
 
 public class Tardis {
 
-    private static final String SHELL_GENERATED_BY_WHO_METADATA_TAG = "shell-interior-owner";
-    private static final int SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE = 0;
+    public static final String SHELL_GENERATED_BY_WHO_METADATA_TAG = "shell-interior-owner";
+    public static final int SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE = 0;
     private static final int SHELL_TARDIS_GENERATED_METADATA_VALUE = 1;
     private static final int SHELL_PLAYER_GENERATED_METADATA_VALUE = 2;
 

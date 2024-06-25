@@ -1,11 +1,18 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
+import net.justonedev.mc.tardisplugin.BlockUtils;
+import net.justonedev.mc.tardisplugin.TardisPlugin;
+import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.util.Vector;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 public class Quader {
@@ -42,6 +49,9 @@ public class Quader {
     }
 
     public void placeInWorld(Location anchorPosition) {
+        placeInWorld(anchorPosition, null);
+    }
+    public void placeInWorld(Location anchorPosition, Collection<BlockMetaDataInjection> injections) {
         Location anchor = anchorPosition.clone().add(quaderData.location);
         if (anchor.getWorld() == null) {
             Bukkit.getLogger().severe("placeInWorld called on Quader, but world was null. Location: " + anchorPosition);
@@ -61,7 +71,7 @@ public class Quader {
             for (int y = 0; y <= bounds.getBlockY(); ++y, writeHead.add(0, 1, 0)) {
                 for (int z = 0; z <= bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
                     Block b = anchor.getWorld().getBlockAt(writeHead);
-                    applyWholeBlockData(b);
+                    applyWholeBlockData(b, injections);
                 }
                 writeHead.setZ(anchor.getBlockZ());
             }
@@ -96,10 +106,22 @@ public class Quader {
     }
     
     private void applyWholeBlockData(Block block) {
+        applyWholeBlockData(block, null);
+    }
+
+    private void applyWholeBlockData(Block block, Collection<BlockMetaDataInjection> injections) {
         block.setType(quaderData.material);
         quaderData.applyAllAttributesTo(block);
+        if (injections != null) {
+            for (BlockMetaDataInjection injection : injections) {
+                for (var attr : injection.metadataTags.entrySet()) {
+                    // apply them to the block here
+                    BlockUtils.setNBTTag(block, attr.getKey(), attr.getValue());
+                }
+            }
+        }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
