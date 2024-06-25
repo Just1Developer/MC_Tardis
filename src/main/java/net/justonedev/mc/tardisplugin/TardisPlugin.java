@@ -3,6 +3,7 @@ package net.justonedev.mc.tardisplugin;
 import net.justonedev.mc.tardisplugin.schematics.BlockData;
 import net.justonedev.mc.tardisplugin.schematics.Schematic;
 import net.justonedev.mc.tardisplugin.schematics.SchematicFactory;
+import net.justonedev.mc.tardisplugin.schematics.SchematicMaker;
 import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
@@ -50,16 +51,26 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     public void onEnable() {
         // Plugin startup logic
         singleton = this;
+
+        SchematicMaker schmaker = new SchematicMaker();
+
         PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(this, this);
         pm.registerEvents(new TardisEvents(), this);
-        getCommand("spawnmodel").setExecutor(this);
-        getCommand("tptardisworld").setExecutor(this);
-        getCommand("home").setExecutor(this);
+        pm.registerEvents(schmaker, this);
+
         getCommand("makeschematic").setExecutor(this);
         getCommand("buildschematic").setExecutor(this);
         getCommand("breakdownschematic").setExecutor(this);
-        getCommand("test").setExecutor(this);
+        getCommand("schmaker").setExecutor(schmaker);
+
+        if (this.getDescription().getVersion().toLowerCase().contains("dev")) {
+            Bukkit.getLogger().info("This is a developer build. Registering additional commands spawnmodel, tptardisworld, home and test");
+            getCommand("spawnmodel").setExecutor(this);
+            getCommand("tptardisworld").setExecutor(this);
+            getCommand("home").setExecutor(this);
+            getCommand("test").setExecutor(this);
+        }
         
         BlockData.init();
 
@@ -150,8 +161,29 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             p.teleport(loc);
         } else if (command.getName().equals("makeschematic")) {
             String name = args[0];
-            Location firstLoc = new Location(p.getWorld(), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
-            Location secondLoc = new Location(p.getWorld(), Integer.parseInt(args[4]), Integer.parseInt(args[5]), Integer.parseInt(args[6]));
+            Location firstLoc, secondLoc;
+
+            if (args.length > 1) {
+                firstLoc = new Location(p.getWorld(), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+            } else {
+                firstLoc = SchematicMaker.getPos(p, 0);
+            }
+            if (args.length > 4) {
+                secondLoc = new Location(p.getWorld(), Integer.parseInt(args[4]), Integer.parseInt(args[5]), Integer.parseInt(args[6]));
+            } else {
+                secondLoc = SchematicMaker.getPos(p, 1);
+            }
+
+            if (firstLoc == null || secondLoc == null || firstLoc.getWorld() == null) {
+                p.sendMessage("§cError: At least one location specified was null.");
+                return false;
+            }
+
+            if (!firstLoc.getWorld().equals(secondLoc.getWorld())) {
+                p.sendMessage("§cError: The two locations must be in the same world.");
+                return false;
+            }
+
             boolean captureAir = false;
             if (args.length > 7) captureAir = Boolean.parseBoolean(args[7]);
             
