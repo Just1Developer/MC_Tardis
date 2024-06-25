@@ -20,7 +20,8 @@ import java.util.Set;
 public class SchematicFactory {
 
 	private static final int NANO_TO_MILLI_TIME = 1000000;
-	
+
+	private final Location minLoc, maxLoc;
 	final String schematicName;
 	List<Cluster> clusters;
 	final boolean captureAir;
@@ -35,6 +36,8 @@ public class SchematicFactory {
 		Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Creating location bounds...");
 		if ((_startPoint.getWorld() != null && !_startPoint.getWorld().equals(_endPoint.getWorld())) || (_endPoint.getWorld() != null && !_endPoint.getWorld().equals(_startPoint.getWorld()))) {
 			Bukkit.getLogger().severe("Error while trying to create schematic: Start and Endpoint are not in the same world. Will not be creating a schematic");
+			minLoc = _startPoint;
+			maxLoc = _endPoint;
 			return;
 		}
 		Location minLocation = new Location(
@@ -48,6 +51,9 @@ public class SchematicFactory {
 				Math.max(_startPoint.getBlockY(), _endPoint.getBlockY()) - minLocation.getBlockY() + 1,
 				Math.max(_startPoint.getBlockZ(), _endPoint.getBlockZ()) - minLocation.getBlockZ() + 1
 		);
+		minLoc = minLocation;
+		maxLoc = minLoc.clone().add(bounds);
+
 		Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scanning environment...");
 		long oldtime = System.nanoTime();
 		blockData = scanEnvironment(minLocation, bounds);
@@ -288,7 +294,7 @@ public class SchematicFactory {
 	}
 	
 	// Todo check for errors
-	private static Set<Vector> getNextBlockRow(Vector start, Vector end, Vector expansionDirection) {
+	private Set<Vector> getNextBlockRow(Vector start, Vector end, Vector expansionDirection) {
 		// Get direction. It is guaranteed that only one coordinate is != 0 at a time.
 		int fromX, toX, fromY, toY, fromZ, toZ;
 		if (expansionDirection.getBlockX() != 0) {
@@ -337,6 +343,13 @@ public class SchematicFactory {
 			fromY = Math.min(start.getBlockY(), end.getBlockY());
 			toY = Math.max(start.getBlockY(), end.getBlockY());
 		}
+
+		fromX = Math.max(Math.min(fromX, maxLoc.getBlockX()), minLoc.getBlockX());
+		toX = Math.max(Math.min(toX, maxLoc.getBlockX()), minLoc.getBlockX());
+		fromY = Math.max(Math.min(fromY, maxLoc.getBlockY()), minLoc.getBlockY());
+		toY = Math.max(Math.min(toY, maxLoc.getBlockY()), minLoc.getBlockY());
+		fromZ = Math.max(Math.min(fromZ, maxLoc.getBlockZ()), minLoc.getBlockZ());
+		toZ = Math.max(Math.min(toZ, maxLoc.getBlockZ()), minLoc.getBlockZ());
 		
 		Set<Vector> nextBlocks = new HashSet<>();
 		for (int x = fromX; x <= toX; ++x) {
