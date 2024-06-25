@@ -10,7 +10,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,6 +68,18 @@ public class Schematic {
 		return this;
 	}
 	
+	public Schematic placeInWorldAsync(Location where) {
+		for (var cluster : clusters) {
+			Bukkit.getScheduler().runTask(TardisPlugin.singleton, () -> cluster.placeInWorld(where, Injections.where(cluster.material, true)));
+		}
+		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
+				where.getWorld() == null ? "unknown" : where.getWorld().getName(),
+				where.getBlockX(),
+				where.getBlockY(),
+				where.getBlockZ()));
+		return this;
+	}
+	
 	static Material[] breakdownMaterials = {
 			// Adding stained glass
 			Material.WHITE_STAINED_GLASS, Material.ORANGE_STAINED_GLASS,
@@ -98,10 +109,17 @@ public class Schematic {
 			Material.DISPENSER, Material.SANDSTONE, Material.NOTE_BLOCK,
 	};
 	
+	boolean buildCorners = false;
+	Material CornerMaterial = Material.REDSTONE_BLOCK;
 	public void placeBreakdown(Location where) {
 		int beginIndex = 0;
 		for (var cluster : clusters) {
 			beginIndex = cluster.placeBreakdown(where, beginIndex);
+		}
+		if (buildCorners) {
+			for (var cluster : clusters) {
+				cluster.placeCorners(where, CornerMaterial);
+			}
 		}
 		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
 				where.getWorld() == null ? "unknown" : where.getWorld().getName(),

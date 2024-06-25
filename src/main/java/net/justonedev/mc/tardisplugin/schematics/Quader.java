@@ -1,18 +1,13 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
 import net.justonedev.mc.tardisplugin.BlockUtils;
-import net.justonedev.mc.tardisplugin.TardisPlugin;
-import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.util.Vector;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 
 public class Quader {
@@ -103,6 +98,20 @@ public class Quader {
             }
             writeHead.setY(anchor.getBlockY());
         }
+    }
+    
+    public void placeCorners(Location anchorPosition, Material material) {
+        Location anchor = anchorPosition.clone().add(quaderData.location);
+        if (anchor.getWorld() == null) {
+            Bukkit.getLogger().severe("placeInWorld called on Quader, but world was null. Location: " + anchorPosition);
+            return;
+        }
+        if (!anchor.isWorldLoaded()) {
+            Bukkit.getLogger().severe("placeInWorld called on Quader, but world wasn't loaded. World: " + anchor.getWorld().getName());
+            return;
+        }
+        anchor.getBlock().setType(material);
+        anchor.add(quaderDimensions.toVectorDimension()).getBlock().setType(material);
     }
     
     private void applyWholeBlockData(Block block) {

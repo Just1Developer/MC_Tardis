@@ -1,5 +1,6 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
+import net.justonedev.mc.tardisplugin.TardisPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -60,6 +61,12 @@ public class Cluster {
         for (var q : quaders) q.placeInWorld(anchorLocation, injections);
     }
     
+    void placeInWorldAsync(Location anchorLocation, Collection<BlockMetaDataInjection> injections) {
+        for (Quader q : quaders) {
+            Bukkit.getScheduler().runTask(TardisPlugin.singleton, () -> q.placeInWorld(anchorLocation, injections));
+        }
+    }
+    
     public int placeBreakdown(Location anchorLocation, int materialIndex) {
         for (var q : quaders) {
             Material mat = Schematic.breakdownMaterials[materialIndex++];
@@ -67,6 +74,10 @@ public class Cluster {
             q.placeBreakdown(anchorLocation, mat);
         }
         return materialIndex;
+    }
+    
+    public void placeCorners(Location anchorLocation, Material material) {
+        for (var q : quaders) q.placeCorners(anchorLocation, material);
     }
 
     // First byte: first bit gives format: 0 => 16-bit, 1 => 24-bit
