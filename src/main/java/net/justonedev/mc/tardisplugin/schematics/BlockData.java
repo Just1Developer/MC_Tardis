@@ -19,6 +19,8 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.Waterlogged;
+import org.bukkit.block.data.type.Slab;
+import org.bukkit.block.data.type.Stairs;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
@@ -31,7 +33,7 @@ public class BlockData {
 
     // Save attributes whose values can be saved in a single byte.
     
-    
+    // Up to 31 Attributes
     private static final byte ATTRIBUTE_ID_WATERLOGGED = 1;  // Boolean
     private static final byte ATTRIBUTE_ID_DIRECTIONAL = 2;  // Direction (Blockface)
     private static final byte ATTRIBUTE_ID_AGE = 3;          // Int
@@ -45,6 +47,8 @@ public class BlockData {
     private static final byte ATTRIBUTE_ID_ORIENTATION = 11;  // Axis enum: X,Y,Z
     private static final byte ATTRIBUTE_ID_ROTATION = 12;    // Blockface enum
     private static final byte ATTRIBUTE_ID_BISECTED_HALF = 13;     // Enum with 2 values
+    private static final byte ATTRIBUTE_ID_STAIRS = 14;     // Enum with 2 values
+    private static final byte ATTRIBUTE_ID_SLABS = 15;     // Enum with 2 values
     // => 4 bit required to attribute declaration
     
     private static final Map<Byte, BlockFace> IMPORT_BLOCKFACES = new HashMap<>();
@@ -57,6 +61,10 @@ public class BlockData {
     private static final Map<Axis, Byte> EXPORT_AXIS = new HashMap<>();
     private static final Map<Byte, Bisected.Half> IMPORT_HALVES = new HashMap<>();
     private static final Map<Bisected.Half, Byte> EXPORT_HALVES = new HashMap<>();
+    private static final Map<Byte, Stairs.Shape> IMPORT_STAIRS = new HashMap<>();
+    private static final Map<Stairs.Shape, Byte> EXPORT_STAIRS = new HashMap<>();
+    private static final Map<Byte, Slab.Type> IMPORT_SLAB = new HashMap<>();
+    private static final Map<Slab.Type, Byte> EXPORT_SLAB = new HashMap<>();
     
     private static HashMap<Byte, Class<? extends org.bukkit.block.data.BlockData>> BlockDataInterfaceMap;
     private static HashMap<Byte, String> BlockDataSetterMethods;
@@ -103,6 +111,15 @@ public class BlockData {
         
         IMPORT_HALVES.put((byte) 1, Bisected.Half.BOTTOM);
         IMPORT_HALVES.put((byte) 2, Bisected.Half.TOP);
+
+        IMPORT_STAIRS.put((byte) 1, Stairs.Shape.INNER_LEFT);
+        IMPORT_STAIRS.put((byte) 2, Stairs.Shape.INNER_RIGHT);
+        IMPORT_STAIRS.put((byte) 3, Stairs.Shape.OUTER_LEFT);
+        IMPORT_STAIRS.put((byte) 4, Stairs.Shape.OUTER_RIGHT);
+
+        IMPORT_SLAB.put((byte) 1, Slab.Type.BOTTOM);
+        IMPORT_SLAB.put((byte) 2, Slab.Type.TOP);
+        IMPORT_SLAB.put((byte) 3, Slab.Type.DOUBLE);
         
         // We know the mapping 1-to-1 and onto
         for (byte key : IMPORT_BLOCKFACES.keySet()) {
@@ -120,6 +137,12 @@ public class BlockData {
         for (byte key : IMPORT_HALVES.keySet()) {
             EXPORT_HALVES.put(IMPORT_HALVES.get(key), key);
         }
+        for (byte key : IMPORT_STAIRS.keySet()) {
+            EXPORT_STAIRS.put(IMPORT_STAIRS.get(key), key);
+        }
+        for (byte key : IMPORT_SLAB.keySet()) {
+            EXPORT_SLAB.put(IMPORT_SLAB.get(key), key);
+        }
         
         BlockDataInterfaceMap = new HashMap<>();
         BlockDataInterfaceMap.put(ATTRIBUTE_ID_WATERLOGGED, org.bukkit.block.data.Waterlogged.class);
@@ -135,7 +158,9 @@ public class BlockData {
         BlockDataInterfaceMap.put(ATTRIBUTE_ID_ORIENTATION, org.bukkit.block.data.Orientable.class);
         BlockDataInterfaceMap.put(ATTRIBUTE_ID_ROTATION, org.bukkit.block.data.Rotatable.class);
         BlockDataInterfaceMap.put(ATTRIBUTE_ID_BISECTED_HALF, org.bukkit.block.data.Bisected.class);
-        
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_STAIRS, org.bukkit.block.data.type.Stairs.class);
+        BlockDataInterfaceMap.put(ATTRIBUTE_ID_SLABS, org.bukkit.block.data.type.Slab.class);
+
         BlockDataSetterMethods = new HashMap<>();
         BlockDataSetterMethods.put(ATTRIBUTE_ID_WATERLOGGED, "setWaterlogged");
         BlockDataSetterMethods.put(ATTRIBUTE_ID_DIRECTIONAL, "setFacing");
@@ -150,10 +175,8 @@ public class BlockData {
         BlockDataSetterMethods.put(ATTRIBUTE_ID_ORIENTATION, "setAxis");
         BlockDataSetterMethods.put(ATTRIBUTE_ID_ROTATION, "setRotation");
         BlockDataSetterMethods.put(ATTRIBUTE_ID_BISECTED_HALF, "setHalf");
-    }
-    
-    static boolean isAttributeIntegerType(int attributeID) {
-        return attributeID == ATTRIBUTE_ID_AGE || attributeID == ATTRIBUTE_ID_LEVEL;
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_STAIRS, "setShape");
+        BlockDataSetterMethods.put(ATTRIBUTE_ID_SLABS, "setType");
     }
     
     final Vector location;
@@ -166,23 +189,9 @@ public class BlockData {
         loadAttributesFrom(block);
     }
     
-    public BlockData(Material material, Location location, Map<Byte, Byte> attributes) {
-        this.material = material;
-        this.location = new Vector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        Attributes = new HashMap<>();
-        Attributes.putAll(attributes);
-    }
-    
     public BlockData(Material material, Vector location, Map<Byte, Byte> attributes) {
         this.material = material;
         this.location = location.clone();
-        Attributes = new HashMap<>();
-        Attributes.putAll(attributes);
-    }
-    
-    public BlockData(Material material, Map<Byte, Byte> attributes) {
-        this.material = material;
-        this.location = new Vector(0, 0, 0);
         Attributes = new HashMap<>();
         Attributes.putAll(attributes);
     }
@@ -284,6 +293,10 @@ public class BlockData {
             case ATTRIBUTE_ID_WATERLOGGED:
             case ATTRIBUTE_ID_LIT:
                 return boolValue(value);
+            case ATTRIBUTE_ID_SLABS:
+                return IMPORT_SLAB.get(value);
+            case ATTRIBUTE_ID_STAIRS:
+                return IMPORT_STAIRS.get(value);
             case ATTRIBUTE_ID_BISECTED_HALF:
                 return IMPORT_HALVES.get(value);
             case ATTRIBUTE_ID_FACE_ATTACHABLE:
@@ -301,50 +314,58 @@ public class BlockData {
         if (clazz.isInstance(blockData)) {
             return clazz.cast(blockData);
         }
-        throw new IllegalArgumentException("Provided BlockData instance does not match the expected class.");
+        final var msg = "Provided BlockData instance does not match the expected class.";
+        Bukkit.getLogger().warning(msg);
+        throw new IllegalArgumentException(msg);
     }
     
     private void loadAttributesFrom(Block block) {
         Attributes = new HashMap<>();
         org.bukkit.block.data.BlockData data = block.getBlockData();
-        if(block.getBlockData() instanceof Directional) {
+        if(data instanceof Directional) {
             Attributes.put(ATTRIBUTE_ID_DIRECTIONAL, EXPORT_BLOCKFACES.get(((Directional)data).getFacing()));
         }
-        if(block.getBlockData() instanceof Ageable) {
+        if(data instanceof Ageable) {
             Attributes.put(ATTRIBUTE_ID_AGE, (byte) ((byte) (((Ageable)data).getAge() + 1) & 0xFF));    // age 0 is illegal because it's indistinguishable from no value at all
         }
-        if(block.getBlockData() instanceof Attachable) {
+        if(data instanceof Attachable) {
             Attributes.put(ATTRIBUTE_ID_ATTACHED, boolValue(((Attachable)data).isAttached()));
         }
-        if(block.getBlockData() instanceof FaceAttachable) {
+        if(data instanceof FaceAttachable) {
             Attributes.put(ATTRIBUTE_ID_FACE_ATTACHABLE, EXPORT_ATTACHED_FACE.get(((FaceAttachable)data).getAttachedFace()));
         }
-        if(block.getBlockData() instanceof Hangable) {
+        if(data instanceof Hangable) {
             Attributes.put(ATTRIBUTE_ID_HANGING, boolValue(((Hangable)data).isHanging()));
         }
-        if(block.getBlockData() instanceof Levelled) {
+        if(data instanceof Levelled) {
             Attributes.put(ATTRIBUTE_ID_LEVEL, (byte) ((byte) ((Levelled)data).getLevel() + 1));    // level 0 is illegal because it's indistinguishable from no value at all
         }
-        if(block.getBlockData() instanceof Powerable) {
+        if(data instanceof Powerable) {
             Attributes.put(ATTRIBUTE_ID_POWERED, boolValue(((Powerable)data).isPowered()));
         }
-        if(block.getBlockData() instanceof Rail) {
+        if(data instanceof Rail) {
             Attributes.put(ATTRIBUTE_ID_RAIL, EXPORT_RAIL_DIRECTION.get(((Rail)data).getShape()));
         }
-        if(block.getBlockData() instanceof Waterlogged) {
+        if(data instanceof Waterlogged) {
             Attributes.put(ATTRIBUTE_ID_WATERLOGGED, boolValue(((Waterlogged)data).isWaterlogged()));
         }
-        if(block.getBlockData() instanceof Lightable) {
+        if(data instanceof Lightable) {
             Attributes.put(ATTRIBUTE_ID_LIT, boolValue(((Lightable)data).isLit()));
         }
-        if(block.getBlockData() instanceof Orientable) {
+        if(data instanceof Orientable) {
             Attributes.put(ATTRIBUTE_ID_ORIENTATION, EXPORT_AXIS.get(((Orientable)data).getAxis()));
         }
-        if(block.getBlockData() instanceof Rotatable) {
+        if(data instanceof Rotatable) {
             Attributes.put(ATTRIBUTE_ID_ROTATION, EXPORT_BLOCKFACES.get(((Rotatable)data).getRotation()));
         }
-        if(block.getBlockData() instanceof Bisected) {
+        if(data instanceof Bisected) {
             Attributes.put(ATTRIBUTE_ID_BISECTED_HALF, EXPORT_HALVES.get(((Bisected)data).getHalf()));
+        }
+        if(data instanceof Stairs) {
+            Attributes.put(ATTRIBUTE_ID_STAIRS, EXPORT_STAIRS.get(((Stairs)data).getShape()));
+        }
+        if(data instanceof Slab) {
+            Attributes.put(ATTRIBUTE_ID_SLABS, EXPORT_SLAB.get(((Slab)data).getType()));
         }
     }
     
