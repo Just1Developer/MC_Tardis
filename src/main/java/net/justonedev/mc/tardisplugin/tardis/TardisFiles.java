@@ -2,6 +2,9 @@ package net.justonedev.mc.tardisplugin.tardis;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -77,5 +80,49 @@ public class TardisFiles {
         if (modelUUID != null && !modelUUID.isBlank()) {
             tardis.bindCurrentModelTardis(UUID.fromString(modelUUID), true);
         }
+    }
+
+    private static Location loadBlockLocation(YamlConfiguration cfg, String locName) {
+        if (!cfg.isSet(locName + ".world")) {
+            //Bukkit.getLogger().warning("Failed to load location " + locName + " because " + locName + ".world is not present");
+            return null;
+        }
+
+        String w_name = cfg.getString(locName + ".world");
+        World world = Bukkit.getWorld(w_name != null ? w_name : "");
+        if (world == null) {
+            Bukkit.getLogger().warning("Failed to load location " + locName + " because the world " + w_name + " is not present.");
+            return new Location(Bukkit.getWorlds().get(0), 0, 0, 0);
+        }
+
+        return new Location(world, cfg.getInt(locName + ".x"), cfg.getInt(locName + ".y"), cfg.getInt(locName + ".z"));
+    }
+
+    private static Location loadCenterBlockLocation(YamlConfiguration cfg, Location loc, String locName) {
+        return loadBlockLocation(cfg, locName).add(0.5, 0, 0.5);
+
+    }
+
+    private static void saveBlockLocation(YamlConfiguration cfg, Location loc, String locName) {
+        if (loc.getWorld() == null) {
+            Bukkit.getLogger().warning("Failed to save location " + locName + " because world is null");
+        }
+        cfg.set(locName + ".world", loc.getWorld().getName());
+        cfg.set(locName + ".x", loc.getBlockX());
+        cfg.set(locName + ".y", loc.getBlockY());
+        cfg.set(locName + ".z", loc.getBlockZ());
+
+    }
+
+    private static void saveFullLocation(YamlConfiguration cfg, Location loc, String locName) {
+        if (loc.getWorld() == null) {
+            Bukkit.getLogger().warning("Failed to save location " + locName + " because world is null");
+        }
+        cfg.set(locName + ".world", loc.getWorld().getName());
+        cfg.set(locName + ".x", loc.getX());
+        cfg.set(locName + ".y", loc.getY());
+        cfg.set(locName + ".z", loc.getZ());
+        cfg.set(locName + ".yaw", loc.getYaw());
+        cfg.set(locName + ".pitch", loc.getPitch());
     }
 }
