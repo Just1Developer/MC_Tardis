@@ -1,6 +1,5 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -124,6 +123,8 @@ public class SchematicMaker implements CommandExecutor, Listener {
         if (!meta.hasLore()) return false;
         assert meta.getLore() != null;
         if (meta.getLore().size() != 1) return false;
-        return meta.getLore().get(0).equals(SCHMAKER_ITEM_LORE);
+        if (!meta.getLore().get(0).equals(SCHMAKER_ITEM_LORE)) return false;
+        if (!meta.hasCustomModelData()) return false;
+        return meta.getCustomModelData() == SCHMAKER_ITEM_ITEMDATA;
     }
 }
