@@ -1,21 +1,30 @@
 package net.justonedev.mc.tardisplugin.tardis;
 
+import net.justonedev.mc.tardisplugin.BlockUtils;
 import net.justonedev.mc.tardisplugin.TardisPlugin;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class TardisEvents implements Listener {
     
     private static final double DOOR_ANGLE_OK_THRESHOLD = 70;
+    private static final boolean BLOCK_BREAK_CREATIVE_OVERRIDE = true;
     
     @EventHandler
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
@@ -43,6 +52,30 @@ public class TardisEvents implements Listener {
             
             e.getPlayer().teleport(model.get().getLocation().clone().add(model.get().getLocation().getDirection()));
         }
+    }
+    
+    List<Location> debug_test_blocklist = new ArrayList<>();
+    @EventHandler
+    public void onProtectedBlockDestroy(BlockBreakEvent e) {
+        Block b = e.getBlock();
+        if (!b.getWorld().equals(TardisWorldGen.getInteriorWorld())) return;
+        int metadata = BlockUtils.getTardisBlockOwnership(b);
+        if (metadata == -1) return;
+        if (metadata == 0) {
+            if (BLOCK_BREAK_CREATIVE_OVERRIDE && e.getPlayer().getGameMode().equals(GameMode.CREATIVE)) return;
+            e.setCancelled(true);
+        } else if (metadata == 1 || metadata == 2) {
+            debug_test_blocklist.add(b.getLocation());
+            if (metadata == 1) e.setDropItems(false);
+        }
+    }
+    
+    @EventHandler
+    public void onProtectedBlockBuild(BlockPlaceEvent e) {
+        Block b = e.getBlock();
+        if (!b.getWorld().equals(TardisWorldGen.getInteriorWorld())) return;
+        if (!debug_test_blocklist.remove(b.getLocation())) return;
+        BlockUtils.setTardisBlockOwnership(b, Tardis.SHELL_PLAYER_GENERATED_METADATA_VALUE);
     }
     
     @EventHandler

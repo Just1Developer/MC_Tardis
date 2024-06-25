@@ -22,8 +22,8 @@ public class Tardis {
 
     public static final String SHELL_GENERATED_BY_WHO_METADATA_TAG = "shell-interior-owner";
     public static final int SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE = 0;
-    private static final int SHELL_TARDIS_GENERATED_METADATA_VALUE = 1;
-    private static final int SHELL_PLAYER_GENERATED_METADATA_VALUE = 2;
+    public static final int SHELL_TARDIS_GENERATED_METADATA_VALUE = 1;
+    public static final int SHELL_PLAYER_GENERATED_METADATA_VALUE = 2;
 
     private final int numericID;
     private final UUID owner;
