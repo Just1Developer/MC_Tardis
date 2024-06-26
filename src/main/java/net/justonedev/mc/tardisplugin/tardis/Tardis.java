@@ -72,7 +72,7 @@ public class Tardis {
     private int animationScheduler;
     private int currentFrame;
     boolean up = false;
-    int FRAME_COUNT = 20;
+    int FRAME_COUNT = 16;
     
     public void spawnTardis(Location where) {
         var currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
@@ -105,7 +105,7 @@ public class Tardis {
         animationScheduler = Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
             setShellModelData(TardisConstants.DATA_TARDIS_ANIMATION_FRAMES + toModelDataDelta());
             currentFrame++;
-            if (currentFrame > 10 * (20 / 2)) {
+            if (currentFrame > 9 * (20 / 2)) {
                 ArmorStand b = (ArmorStand) Bukkit.getEntity(tardisOuterShellUUID);
                 if (b != null) b.setInvisible(false);
                 setUseTransparent(false);
@@ -129,10 +129,10 @@ public class Tardis {
         int value = currentValue;
         if (up) {
             currentValue++;
-            if (currentValue >= FRAME_COUNT - (currentFrame / 15)) up = false;
+            if (currentValue >= FRAME_COUNT - (currentFrame / 12)) up = false;
         } else {
             currentValue--;
-            if (currentValue <= 0) up = true;
+            if (currentValue <= 3) up = true;
         }
         return value;
     }

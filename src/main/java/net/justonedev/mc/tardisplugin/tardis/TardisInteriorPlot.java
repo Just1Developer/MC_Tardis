@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.tardis;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 
 public class TardisInteriorPlot {
 
@@ -53,6 +54,16 @@ public class TardisInteriorPlot {
      */
     public Location getOrigin() {
         return new Location(TardisWorldGen.getInteriorWorld(), beginX, 0, beginZ);
+    }
+
+    /**
+     * Gets the minimum location as Location object @ (X, world.minHeight, Z)
+     * @return The plot origin point.
+     */
+    public Location getMinLoc() {
+        World w = TardisWorldGen.getInteriorWorld();
+        assert w != null;
+        return new Location(w, beginX, w.getMinHeight(), beginZ);
     }
 
 }

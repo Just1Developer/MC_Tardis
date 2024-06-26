@@ -5,13 +5,15 @@ import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.util.Vector;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
@@ -20,6 +22,7 @@ public class TardisBlockData {
     private static final String BLOCKDATA_FILE = "%d.bdata";
     private static final int BLOCKDATA_VALUES = 4;
     private static final int USING_BYTES = 5;
+    
     public static void initializeTardisAsync(Tardis tardis, File folder) {
         var executor = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), BLOCKDATA_VALUES));
         List<CompletableFuture<Void>> futures = new ArrayList<>();
@@ -31,9 +34,19 @@ public class TardisBlockData {
         }
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
+    
+    public static void saveBlockDataToFiles(Tardis tardis) {
+        var executor = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), BLOCKDATA_VALUES));
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (int i = 0; i < BLOCKDATA_VALUES; ++i) {
+            final int data = i;
+            futures.add(CompletableFuture.runAsync(() -> saveBlockdata(tardis, data), executor));
+        }
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    }
 
     private static void applyBlockdata(Tardis tardis, File file, int value) {
-        Location minLoc = tardis.getInteriorPlot().getOrigin();
+        Location minLoc = tardis.getInteriorPlot().getMinLoc();
         assert file.exists();
         try (FileInputStream inputStream = new FileInputStream(file)) {
             byte bytenum = 0;
@@ -71,6 +84,43 @@ public class TardisBlockData {
                         break;
                 }
             }
+        } catch (IOException e) {
+            Bukkit.getLogger().warning("IOException occurred when reading file " + file.getName());
+        }
+    }
+
+    private static void saveBlockdata(Tardis tardis, int ownerID) {
+        Set<Vector> blocks = Set.of(new Vector(0, 1, 2));// todo tardis.getBlocksOwnedBy(ownerID);
+        if (blocks == null || blocks.isEmpty()) return;
+        
+        File file = TardisFiles.getFileForTardis(tardis, String.format(BLOCKDATA_FILE, ownerID));
+        if (!file.getParentFile().exists()) if (!file.getParentFile().mkdirs()) {
+            Bukkit.getLogger().warning("Could not create folder " + file.getParent());
+            return;
+        }
+        
+        try {
+            if (!file.createNewFile()) {
+                Bukkit.getLogger().warning("Could not create file " + file.getName());
+                return;
+            }
+        } catch (IOException e) {
+            Bukkit.getLogger().warning("An exception occurred while creating file " + file.getName() + ":");
+            e.printStackTrace();
+            return;
+        }
+        
+        try (FileOutputStream outputStream = new FileOutputStream(file)) {
+            
+            for (var loc : blocks) {
+                // Write the vector
+                outputStream.write((byte) ((loc.getBlockX() >> 6) & 0xFF));
+                outputStream.write((byte) ((loc.getBlockX() & 0x3F << 2) | (loc.getBlockY() & 0x03)));
+                outputStream.write((byte) (loc.getBlockY() & 0xFF));
+                outputStream.write((byte) ((loc.getBlockZ() >> 8) & 0xFF));
+                outputStream.write((byte) (loc.getBlockZ() & 0xFF));
+            }
+            outputStream.flush();
         } catch (IOException e) {
             Bukkit.getLogger().warning("IOException occurred when reading file " + file.getName());
         }
