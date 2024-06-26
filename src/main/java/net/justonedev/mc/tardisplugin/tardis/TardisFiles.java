@@ -10,15 +10,17 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 public class TardisFiles {
     private static String TARDIS_FOLDER = "%s/tardises/";
     private static String SINGLE_TARDIS_FOLDER_FORMAT = TARDIS_FOLDER + "t%d-%s/%s";
     private static String MAIN_DATAHOLDER_FILE = "tardis.yml";
-    private static String BLOCKDATA_FILE = "%d.bdata";
 
     public static void initialize() {
         Bukkit.getLogger().info("Initializing File System");
@@ -59,20 +61,18 @@ public class TardisFiles {
             Bukkit.getLogger().severe("Failed to create folder " + TARDIS_FOLDER + ". Aborting tardis load.");
             return;
         }
+
+        var executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2 + 1);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (File folder : Objects.requireNonNull(folderFile.listFiles())) {
             if (!folder.isDirectory()) continue;
             if (!folder.getName().startsWith("t")) continue;
-            loadTardis(folder);
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> loadTardis(folder), executor);
+            futures.add(future);
         }
 
         // Wait for all blockdata futures to complete
-        CompletableFuture<Void> allDone = CompletableFuture.allOf(TardisBlockData.futures.toArray(new CompletableFuture[0]));
-        try {
-            // Block the current thread until all futures complete
-            allDone.join();
-        } catch (Exception e) {
-            Bukkit.getLogger().severe("Failed to wait loading for tardis blockdata to load.");
-        }
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
 
     private static void loadTardis(File folder) {
@@ -147,7 +147,7 @@ public class TardisFiles {
         cfg.set(locName + ".pitch", loc.getPitch());
     }
 
-    private static File getFileForTardis(Tardis tardis, String filename) {
+    public static File getFileForTardis(Tardis tardis, String filename) {
         return new File(String.format(SINGLE_TARDIS_FOLDER_FORMAT, TardisPlugin.singleton.getDataFolder(), tardis.getNumericID(), tardis.getFullUUIDString(), filename));
     }
 }
