@@ -5,7 +5,6 @@ import net.justonedev.mc.tardisplugin.tardisdata.TardisBlockData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -44,7 +43,8 @@ public class TardisFiles {
 
         cfg.set("owner", tardis.getOwnerUUIDString());
         cfg.set("uuid", tardis.getTardisUUIDString());
-        cfg.set("outer-shell-design", tardis.getOuterShellDesignIndex());
+        cfg.set("exterior-shell.design", tardis.getOuterShellDesignIndex());
+        saveBlockLocation(cfg, tardis.getTardisOuterShellLocation(), "exterior-shell.location");
         final var modelUUID = tardis.getTardisOuterShellUUID();
         cfg.set("presence", modelUUID.isEmpty() ? "" : modelUUID.get().toString());
 
@@ -91,12 +91,14 @@ public class TardisFiles {
         if (tempString == null) tempString = "";
         UUID tardisUUID = UUID.fromString(tempString);
 
-        int outerShellIndex = cfg.getInt("outer-shell-design");
+        int outerShellIndex = cfg.getInt("exterior-shell.design");
         int plotID = cfg.getInt("plotID");
 
         // Insert in map is done in constructor
         Tardis tardis = new Tardis(ownerUUID, tardisUUID, outerShellIndex, plotID);
         String modelUUID = cfg.getString("presence");
+        Location loc = loadBlockLocation(cfg, "exterior-shell.location");
+        tardis.setTardisOuterShellLocation(loc);
         if (modelUUID != null && !modelUUID.isBlank()) {
             tardis.bindCurrentModelTardis(UUID.fromString(modelUUID), true);
         }
@@ -125,6 +127,9 @@ public class TardisFiles {
     }
 
     private static void saveBlockLocation(YamlConfiguration cfg, Location loc, String locName) {
+        if (loc == null) {
+            return;
+        }
         if (loc.getWorld() == null) {
             Bukkit.getLogger().warning("Failed to save location " + locName + " because world is null");
         }

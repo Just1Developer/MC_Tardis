@@ -24,6 +24,10 @@ public class Tardis {
     public static final int SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE = 0;
     public static final int SHELL_TARDIS_GENERATED_METADATA_VALUE = 1;
     public static final int SHELL_PLAYER_GENERATED_METADATA_VALUE = 2;
+    
+    private static final String SOUND_NAME_TAKEOFF = "tardis.sfx.takeoff";
+    private static final String SOUND_NAME_CLOISTER_BELL = "tardis.sfx.bell";
+    private static final String SOUND_NAME_ARRIVE = "tardis.sfx.arrive";
 
     private final int numericID;
     private final UUID owner;
@@ -65,6 +69,11 @@ public class Tardis {
         return tardis;
     }
 
+    private int animationScheduler;
+    private int currentFrame;
+    boolean up = false;
+    int FRAME_COUNT = 20;
+    
     public void spawnTardis(Location where) {
         var currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
         tardisOuterShellUUID = currentModelTardis.getUniqueId();
@@ -72,6 +81,60 @@ public class Tardis {
         tardisOuterShellDirection = currentModelTardis.getLocation().getDirection();
         tardisOuterShellSpawnLocation = tardisOuterShellLocation.clone().add(tardisOuterShellDirection);
         bindCurrentModelTardis(tardisOuterShellUUID, false);
+        
+        /*
+        if (System.nanoTime() > 0) {
+            setUseTransparent(true);
+            setShellModelData(2001);
+            Entity e = Bukkit.getEntity(tardisOuterShellUUID);
+            if (e != null) {
+                ((ArmorStand) e).setInvulnerable(false);
+                ((ArmorStand) e).setInvisible(false);
+                ((ArmorStand) e).setGlowing(true);
+            }
+            return;
+        }*/
+        
+        if (Bukkit.getScheduler().isCurrentlyRunning(animationScheduler)) return;
+        
+        setUseTransparent(true);
+        ArmorStand a = (ArmorStand) Bukkit.getEntity(tardisOuterShellUUID);
+        if (a != null) a.setInvisible(true);
+        currentFrame = 0;
+        if (where.getWorld() != null) where.getWorld().playSound(where, SOUND_NAME_ARRIVE, 3.0f, 1.0f);
+        animationScheduler = Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
+            setShellModelData(TardisConstants.DATA_TARDIS_ANIMATION_FRAMES + toModelDataDelta());
+            currentFrame++;
+            if (currentFrame > 10 * (20 / 2)) {
+                ArmorStand b = (ArmorStand) Bukkit.getEntity(tardisOuterShellUUID);
+                if (b != null) b.setInvisible(false);
+                setUseTransparent(false);
+                setShellModelData(TardisConstants.DATA_TARDIS_SHELL_ORIGINAL);
+                Bukkit.getScheduler().cancelTask(animationScheduler);
+            }
+        }, 0, 2);
+        
+        Bukkit.getScheduler().scheduleSyncDelayedTask(TardisPlugin.singleton, () -> {
+            Entity e = Bukkit.getEntity(tardisOuterShellUUID);
+            if (e != null) {
+                e.setInvulnerable(false);
+                e.setGlowing(true);
+                e.remove();
+            }
+        }, 300);
+    }
+    
+    int currentValue = FRAME_COUNT;
+    private int toModelDataDelta() {
+        int value = currentValue;
+        if (up) {
+            currentValue++;
+            if (currentValue >= FRAME_COUNT - (currentFrame / 15)) up = false;
+        } else {
+            currentValue--;
+            if (currentValue <= 0) up = true;
+        }
+        return value;
     }
 
     public void setShellModelData(int modelData) {
@@ -79,12 +142,32 @@ public class Tardis {
         if (stand.isEmpty()) return;
         if (stand.get().getEquipment() == null) return;
         ItemStack item = stand.get().getEquipment().getHelmet();
-        if (item == null || true) item = new ItemStack(Material.WHITE_STAINED_GLASS); // todo temp change to glass
+        if (item == null) return;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
         meta.setCustomModelData(modelData);
         item.setItemMeta(meta);
         stand.get().getEquipment().setHelmet(item);
+    }
+
+    public void setUseTransparent(boolean transparent) {
+        Optional<ArmorStand> stand = getCurrentModelTardis();
+        if (stand.isEmpty()) return;
+        if (stand.get().getEquipment() == null) return;
+        ItemStack item = stand.get().getEquipment().getHelmet();
+        Material newMat = transparent ? TardisConstants.TARDIS_ANIMATED_SHELL_MATERIAL : TardisConstants.TARDIS_STATIC_SHELL_MATERIAL;
+        
+        ItemStack newItem;
+        int modelData = getShellModelData();
+        if (modelData == -1) modelData = TardisConstants.DATA_TARDIS_SHELL_ORIGINAL;
+        if (item == null || item.getType() != newMat) newItem = new ItemStack(newMat);
+        else return;
+        
+        ItemMeta meta = newItem.getItemMeta();
+        if (meta == null) return;
+        meta.setCustomModelData(modelData);
+        newItem.setItemMeta(meta);
+        stand.get().getEquipment().setHelmet(newItem);
     }
 
     public int getShellModelData() {
@@ -158,6 +241,22 @@ public class Tardis {
      */
     Optional<Location> getOuterShellLocation() {
         return tardisOuterShellLocation == null ? Optional.empty() : Optional.of(tardisOuterShellLocation);
+    }
+    
+    /**
+     * Only use in setup, please.
+     * @param loc The location.
+     */
+    void setTardisOuterShellLocation(Location loc) {
+        this.tardisOuterShellLocation = loc;
+    }
+    
+    /**
+     * Might be null.
+     * @return Null or location.
+     */
+    Location getTardisOuterShellLocation() {
+        return this.tardisOuterShellLocation;
     }
     
     void bindCurrentModelTardis(UUID armorStandUUID) {

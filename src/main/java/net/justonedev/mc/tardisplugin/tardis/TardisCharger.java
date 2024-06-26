@@ -15,15 +15,20 @@ public class TardisCharger {
     private static final int IS_CHARGING_CONTROL_TIMER_SECONDS = 5;
 
     private final Tardis tardisRef;
+    private boolean running;
     private int chargeScheduler;
+    private boolean isCharging;
 
     TardisCharger(Tardis tardisRef) {
         this.tardisRef = tardisRef;
+        running = false;
+        this.isCharging = false;
     }
 
     void startCheckingForCharge() {
+        if (running) return;
+        running = true;
         chargeScheduler = Bukkit.getScheduler().scheduleSyncRepeatingTask(TardisPlugin.singleton, () -> {
-            Bukkit.broadcastMessage("I did a thing");
             Optional<Location> beaconLoc = tardisRef.getOuterShellLocation();
             if (beaconLoc.isEmpty()) {
                 stopCheckingForCharge();
@@ -34,16 +39,28 @@ public class TardisCharger {
                 stopCheckingForCharge();
                 return;
             }
-
+            
+            //--------------------------------------------------//
+            //                                                  //
+            //  Observation: The getTier() changes from 0 to 1  //
+            //  when activated.                                 //
+            //                                                  //
+            //--------------------------------------------------//
+            
+            // For some reason, this still executes twice. But, since it's a toggle and it does what it's supposed to, I don't mind.
+            
+            // Todo: Perhaps one scheduler for all charging? -> Good when many tardises
+            
             Beacon beacon = (Beacon) block.getState();
-            Bukkit.broadcastMessage("-------- ");
-            Bukkit.broadcastMessage("§eInfo:: isBlockPowered: " + block.isBlockPowered());
-            Bukkit.broadcastMessage("§eInfo:: isBlockIndirectlyPowered: " + block.isBlockIndirectlyPowered());
-            Bukkit.broadcastMessage("§bInfo:: (Beacon).getLock: " + beacon.getLock());
-            Bukkit.broadcastMessage("§bInfo:: (Beacon).getCustomName: " + beacon.getCustomName());
-            Bukkit.broadcastMessage("§aInfo:: (Beacon).getCustomName: " + beacon.getPrimaryEffect());
-            Bukkit.broadcastMessage("§aInfo:: (Beacon).getCustomName: " + beacon.getSecondaryEffect());
-            Bukkit.broadcastMessage("§dInfo:: (Beacon).getCustomName: " + beacon.getTier());
+            boolean active = beacon.getTier() > 0;
+            if (active != isCharging) {
+                isCharging = active;
+                if (isCharging) {
+                    Bukkit.broadcastMessage("§bStarted charging tardis." + System.nanoTime());
+                } else {
+                    Bukkit.broadcastMessage("§cStopped charging tardis.");
+                }
+            }
 
         }, 20, 20 * IS_CHARGING_CONTROL_TIMER_SECONDS);
     }
