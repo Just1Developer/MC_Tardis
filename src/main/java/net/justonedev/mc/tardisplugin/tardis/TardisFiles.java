@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.tardis;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
+import net.justonedev.mc.tardisplugin.tardisdata.TardisBlockData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -11,9 +12,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class TardisFiles {
     private static String TARDIS_FOLDER = "%s/tardises/";
+    private static String SINGLE_TARDIS_FOLDER_FORMAT = TARDIS_FOLDER + "t%d-%s/%s";
+    private static String MAIN_DATAHOLDER_FILE = "tardis.yml";
+    private static String BLOCKDATA_FILE = "%d.bdata";
 
     public static void initialize() {
         Bukkit.getLogger().info("Initializing File System");
@@ -32,8 +37,7 @@ public class TardisFiles {
     }
 
     public static void saveToFile(Tardis tardis) {
-        String filename = TARDIS_FOLDER + String.format("t%d-%s.yml", tardis.getNumericID(), tardis.getFullUUIDString());
-        File file = new File(filename);
+        File file = getFileForTardis(tardis, MAIN_DATAHOLDER_FILE);
         YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
 
         cfg.set("owner", tardis.getOwnerUUIDString());
@@ -45,7 +49,7 @@ public class TardisFiles {
         try {
             cfg.save(file);
         } catch (IOException e) {
-            Bukkit.getLogger().severe("Error saving file " + filename + ": " + e.getMessage());
+            Bukkit.getLogger().severe("Error saving file " + file.getName() + ": " + e.getMessage());
         }
     }
 
@@ -55,14 +59,30 @@ public class TardisFiles {
             Bukkit.getLogger().severe("Failed to create folder " + TARDIS_FOLDER + ". Aborting tardis load.");
             return;
         }
-        for (File f : Objects.requireNonNull(folderFile.listFiles())) {
-            if (!f.getName().endsWith(".yml") || !f.getName().startsWith("t")) continue;
-            loadTardis(f);
+        for (File folder : Objects.requireNonNull(folderFile.listFiles())) {
+            if (!folder.isDirectory()) continue;
+            if (!folder.getName().startsWith("t")) continue;
+            loadTardis(folder);
+        }
+
+        // Wait for all blockdata futures to complete
+        CompletableFuture<Void> allDone = CompletableFuture.allOf(TardisBlockData.futures.toArray(new CompletableFuture[0]));
+        try {
+            // Block the current thread until all futures complete
+            allDone.join();
+        } catch (Exception e) {
+            Bukkit.getLogger().severe("Failed to wait loading for tardis blockdata to load.");
         }
     }
 
-    private static void loadTardis(File file) {
-        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+    private static void loadTardis(File folder) {
+        File mainfile = new File(folder, MAIN_DATAHOLDER_FILE);
+        if (!mainfile.exists()) {
+            Bukkit.getLogger().warning("Could not load main tardis file in folder " + folder.getName());
+            return;
+        }
+
+        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(mainfile);
         String tempString = cfg.getString("owner");
         if (tempString == null) tempString = "";
         UUID ownerUUID = UUID.fromString(tempString);
@@ -80,6 +100,7 @@ public class TardisFiles {
         if (modelUUID != null && !modelUUID.isBlank()) {
             tardis.bindCurrentModelTardis(UUID.fromString(modelUUID), true);
         }
+        TardisBlockData.initializeTardisAsync(tardis, folder);
     }
 
     private static Location loadBlockLocation(YamlConfiguration cfg, String locName) {
@@ -124,5 +145,9 @@ public class TardisFiles {
         cfg.set(locName + ".z", loc.getZ());
         cfg.set(locName + ".yaw", loc.getYaw());
         cfg.set(locName + ".pitch", loc.getPitch());
+    }
+
+    private static File getFileForTardis(Tardis tardis, String filename) {
+        return new File(String.format(SINGLE_TARDIS_FOLDER_FORMAT, TardisPlugin.singleton.getDataFolder(), tardis.getNumericID(), tardis.getFullUUIDString(), filename));
     }
 }
