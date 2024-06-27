@@ -102,7 +102,7 @@ public class TardisFiles {
         if (modelUUID != null && !modelUUID.isBlank()) {
             tardis.bindCurrentModelTardis(UUID.fromString(modelUUID), true);
         }
-        TardisBlockData.initializeTardisAsync(tardis, folder);
+        TardisBlockData.initializeTardisAsync(tardis);
     }
 
     private static Location loadBlockLocation(YamlConfiguration cfg, String locName) {
