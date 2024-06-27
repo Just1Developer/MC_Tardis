@@ -5,6 +5,7 @@ import net.justonedev.mc.tardisplugin.schematics.BlockMetaDataInjection;
 import net.justonedev.mc.tardisplugin.schematics.Schematic;
 import net.justonedev.mc.tardisplugin.schematics.SchematicFactory;
 import net.justonedev.mc.tardisplugin.schematics.SchematicMaker;
+import net.justonedev.mc.tardisplugin.schematics.rotation.Rotation;
 import net.justonedev.mc.tardisplugin.tardis.Tardis;
 import net.justonedev.mc.tardisplugin.tardis.TardisCharger;
 import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
@@ -64,6 +65,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         getCommand("makeschematic").setExecutor(this);
         getCommand("buildschematic").setExecutor(this);
         getCommand("breakdownschematic").setExecutor(this);
+        getCommand("schematics").setExecutor(this);
         getCommand("schmaker").setExecutor(schmaker);
 
         if (this.getDescription().getVersion().toLowerCase().contains("dev")) {
@@ -198,6 +200,24 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
                 return true;
             }
             Schematic schematic = new Schematic(file);
+            
+            if (args.length > 1) {
+				switch (args[1]) {
+					case "90":
+						schematic.setRotation(Rotation.East);
+						break;
+					case "270":
+						schematic.setRotation(Rotation.West);
+						break;
+					case "180X":
+						schematic.setRotation(Rotation.NorthSouth);
+						break;
+					case "180Z":
+						schematic.setRotation(Rotation.EastWest);
+						break;
+				}
+            }
+            
             (args[0].startsWith("tardis") ? schematic
                     .with(new BlockMetaDataInjection(Material.DIAMOND_BLOCK).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE)
                             .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE)))
@@ -217,6 +237,19 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             }
             Schematic schematic = new Schematic(file);
             schematic.placeBreakdown(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
+        } else if (command.getName().equals("schematics")) {
+            File[] files = new File(getDataFolder() + "/schematics/").listFiles();
+            if (files == null || files.length == 0) {
+                p.sendMessage("§cNo schematics to display.");
+                return true;
+            }
+            p.sendMessage("§eListing " + files.length + " schematics");
+            for (var file : files) {
+                if (!file.getName().endsWith(".tschem")) continue;
+                String[] _names = file.getName().split("\\\\");
+                String name = _names[_names.length - 1];
+                p.sendMessage((name.startsWith("tardis") ? "§b" : "§e") + name);
+            }
         } else if (command.getName().equals("test")) {
             Block b = p.getLocation().clone().add(1, 0, 0).getBlock();
             b.setType(Material.OAK_STAIRS);

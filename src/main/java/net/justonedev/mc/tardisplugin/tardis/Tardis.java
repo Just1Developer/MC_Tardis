@@ -89,7 +89,7 @@ public class Tardis {
         var currentModelTardis = TardisPlugin.spawnModel(where, TardisModelType.TARDIS_OUTER_STATIC);
         tardisOuterShellUUID = currentModelTardis.getUniqueId();
         tardisOuterShellLocation = currentModelTardis.getLocation();
-        tardisOuterShellDirection = currentModelTardis.getLocation().getDirection();
+        tardisOuterShellDirection = currentModelTardis.getLocation().getDirection().multiply(-1);
         tardisOuterShellSpawnLocation = tardisOuterShellLocation.clone().add(tardisOuterShellDirection);
         bindCurrentModelTardis(tardisOuterShellUUID, false);
         

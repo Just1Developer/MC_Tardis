@@ -7,6 +7,7 @@ commands:
   makeschematic:
   buildschematic:
   breakdownschematic:
+  schematics:
   schmaker:
   spawnmodel:
   tptardisworld:

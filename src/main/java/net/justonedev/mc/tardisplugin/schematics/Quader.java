@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
 import net.justonedev.mc.tardisplugin.BlockUtils;
+import net.justonedev.mc.tardisplugin.schematics.rotation.Rotation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -44,10 +45,14 @@ public class Quader {
     }
 
     public void placeInWorld(Location anchorPosition) {
-        placeInWorld(anchorPosition, null);
+        placeInWorld(anchorPosition, Rotation.None, null);
     }
-    public void placeInWorld(Location anchorPosition, Collection<BlockMetaDataInjection> injections) {
-        Location anchor = anchorPosition.clone().add(quaderData.location);
+    public void placeInWorld(Location anchorPosition, Rotation rotation) {
+        placeInWorld(anchorPosition, rotation, null);
+    }
+    public void placeInWorld(Location anchorPosition, Rotation rotation, Collection<BlockMetaDataInjection> injections) {
+        Location anchor = anchorPosition.clone();
+        Vector offset = quaderData.location.clone();
         if (anchor.getWorld() == null) {
             Bukkit.getLogger().severe("placeInWorld called on Quader, but world was null. Location: " + anchorPosition);
             return;
@@ -56,15 +61,27 @@ public class Quader {
             Bukkit.getLogger().severe("placeInWorld called on Quader, but world wasn't loaded. World: " + anchor.getWorld().getName());
             return;
         }
+        
+        Vector xDelta = new Vector(1, 0, 0);
+        Vector yDelta = new Vector(0, 1, 0);
+        Vector zDelta = new Vector(0, 0, 1);
+        
+        if (rotation != null && rotation != Rotation.None) {
+            rotation.transformVector(offset);
+            rotation.transformVector(xDelta);
+            rotation.transformVector(zDelta);
+        }
+        anchor.add(offset);
+        
         Location writeHead = anchor.clone();
         Vector bounds = quaderDimensions.toVectorDimension();
         var headBlock = writeHead.getBlock();
         headBlock.setType(quaderData.material);
         quaderData.cacheBlockDataSetters(headBlock);
         
-        for (int x = 0; x <= bounds.getBlockX(); ++x, writeHead.add(1, 0, 0)) {
-            for (int y = 0; y <= bounds.getBlockY(); ++y, writeHead.add(0, 1, 0)) {
-                for (int z = 0; z <= bounds.getBlockZ(); ++z, writeHead.add(0, 0, 1)) {
+        for (int x = 0; x <= bounds.getBlockX(); ++x, writeHead.add(xDelta)) {
+            for (int y = 0; y <= bounds.getBlockY(); ++y, writeHead.add(yDelta)) {
+                for (int z = 0; z <= bounds.getBlockZ(); ++z, writeHead.add(zDelta)) {
                     Block b = anchor.getWorld().getBlockAt(writeHead);
                     applyWholeBlockData(b, injections);
                 }

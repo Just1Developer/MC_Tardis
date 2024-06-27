@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
+import net.justonedev.mc.tardisplugin.schematics.rotation.Rotation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -19,6 +20,7 @@ public class Schematic {
 	public static String FILE_ENDING = ".tschem";
 
 	private final InjectionSet Injections;
+	private Rotation rotation;
 	List<Cluster> clusters;
 
 	public Schematic(String schematicName) {
@@ -31,6 +33,7 @@ public class Schematic {
 			Bukkit.getLogger().warning("Couldn't find file " + saveFile.getAbsolutePath());
 			return;
 		}
+		this.rotation = Rotation.None;
 		readFile(saveFile);
 	}
 
@@ -58,8 +61,16 @@ public class Schematic {
 		return Injections.stream().collect(Collectors.toUnmodifiableSet());
 	}
 	
+	public Rotation getRotation() {
+		return this.rotation;
+	}
+	
+	public void setRotation(Rotation rotation) {
+		this.rotation = rotation;
+	}
+	
 	public Schematic placeInWorld(Location where) {
-		for (var cluster : clusters) cluster.placeInWorld(where, Injections.where(cluster.material, true));
+		for (var cluster : clusters) cluster.placeInWorld(where, Rotation.None, Injections.where(cluster.material, true));
 		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
 				where.getWorld() == null ? "unknown" : where.getWorld().getName(),
 				where.getBlockX(),
@@ -70,7 +81,7 @@ public class Schematic {
 	
 	public Schematic placeInWorldAsync(Location where) {
 		for (var cluster : clusters) {
-			Bukkit.getScheduler().runTask(TardisPlugin.singleton, () -> cluster.placeInWorld(where, Injections.where(cluster.material, true)));
+			Bukkit.getScheduler().runTask(TardisPlugin.singleton, () -> cluster.placeInWorldAsync(where, Rotation.None, Injections.where(cluster.material, true)));
 		}
 		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
 				where.getWorld() == null ? "unknown" : where.getWorld().getName(),

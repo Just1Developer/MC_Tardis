@@ -1,6 +1,7 @@
 package net.justonedev.mc.tardisplugin.schematics;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
+import net.justonedev.mc.tardisplugin.schematics.rotation.Rotation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -54,16 +55,20 @@ public class Cluster {
     }
     
     void placeInWorld(Location anchorLocation) {
-        placeInWorld(anchorLocation, null);
-    }
-
-    void placeInWorld(Location anchorLocation, Collection<BlockMetaDataInjection> injections) {
-        for (var q : quaders) q.placeInWorld(anchorLocation, injections);
+        placeInWorld(anchorLocation, Rotation.None, null);
     }
     
-    void placeInWorldAsync(Location anchorLocation, Collection<BlockMetaDataInjection> injections) {
+    void placeInWorld(Location anchorLocation, Rotation rotation) {
+        placeInWorld(anchorLocation, rotation, null);
+    }
+
+    void placeInWorld(Location anchorLocation, Rotation rotation, Collection<BlockMetaDataInjection> injections) {
+        for (var q : quaders) q.placeInWorld(anchorLocation, rotation, injections);
+    }
+    
+    void placeInWorldAsync(Location anchorLocation, Rotation rotation, Collection<BlockMetaDataInjection> injections) {
         for (Quader q : quaders) {
-            Bukkit.getScheduler().runTask(TardisPlugin.singleton, () -> q.placeInWorld(anchorLocation, injections));
+            Bukkit.getScheduler().runTask(TardisPlugin.singleton, () -> q.placeInWorld(anchorLocation, rotation, injections));
         }
     }
     
