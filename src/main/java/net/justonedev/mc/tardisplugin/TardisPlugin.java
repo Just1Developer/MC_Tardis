@@ -147,6 +147,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         Optional<Integer> tardisIDbyLoc = TardisWorldGen.calculateTardisIDbyLoc(loc.getBlockX(), loc.getBlockZ());
 		return tardisIDbyLoc.map(integer -> singleton.tardises.getOrDefault(integer, null)).orElse(null);
 	}
+    // Todo the above function is broken, but only after restarting
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

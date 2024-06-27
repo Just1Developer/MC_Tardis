@@ -96,6 +96,7 @@ public class TardisBlockData {
 
     private static void saveBlockdata(Tardis tardis, int ownerID) {
         Set<Vector> blocks = tardis.getBlocksOwnedBy(ownerID);
+        System.out.println("DEBUG >> Saving block set of size " + (blocks == null ? "null" : blocks.size()) + " with owner ID " + ownerID);
         if (blocks == null || blocks.isEmpty()) return;
         
         File file = TardisFiles.getFileForTardis(tardis, String.format(BLOCKDATA_FILE, ownerID));
@@ -114,6 +115,8 @@ public class TardisBlockData {
             e.printStackTrace();
             return;
         }
+
+        System.out.println("Yip yup + " + file.getName());
         
         try (FileOutputStream outputStream = new FileOutputStream(file)) {
             

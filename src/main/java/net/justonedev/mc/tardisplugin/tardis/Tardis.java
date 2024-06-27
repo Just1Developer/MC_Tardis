@@ -40,6 +40,7 @@ public class Tardis {
     private final UUID owner;
     private final UUID tardisUUID;
     private final int outerShellDesignIndex;
+    private final int interiorPlotID;
     private final TardisInteriorPlot interiorPlot;
     private final Location spawnLocation;
 
@@ -56,6 +57,7 @@ public class Tardis {
         this.numericID = interiorPlotID;
         this.owner = owner;
         this.tardisUUID = tardisUUID;
+        this.interiorPlotID = interiorPlotID;
         this.outerShellDesignIndex = outerShellDesignIndex;
         // Todo do we need this?
         Optional<TardisInteriorPlot> plot = TardisWorldGen.calculateInteriorPlotByID(interiorPlotID);
@@ -122,7 +124,8 @@ public class Tardis {
                 Bukkit.getScheduler().cancelTask(animationScheduler);
             }
         }, 0, 2);
-        
+
+        /*
         Bukkit.getScheduler().scheduleSyncDelayedTask(TardisPlugin.singleton, () -> {
             Entity e = Bukkit.getEntity(tardisOuterShellUUID);
             if (e != null) {
@@ -130,7 +133,7 @@ public class Tardis {
                 e.setGlowing(true);
                 e.remove();
             }
-        }, 300);
+        }, 300);*/
     }
     
     int currentValue = FRAME_COUNT;
@@ -209,6 +212,10 @@ public class Tardis {
     
     Optional<UUID> getTardisOuterShellUUID() {
         return Optional.of(tardisOuterShellUUID);
+    }
+
+    int getInteriorPlotID() {
+        return interiorPlotID;
     }
     
     /**
@@ -385,9 +392,13 @@ public class Tardis {
 
     public static BlockRunnable getSetOwnershipFunction(int ownerID) {
         return (block) -> {
+            Bukkit.broadcastMessage("§e1");
             Tardis tardis = getTardisByAnyPlotLocation(block.getLocation());
+            Bukkit.broadcastMessage("§a2 + " + tardis);
             if (tardis == null) return;
+            Bukkit.broadcastMessage("§d3");
             if (block.getLocation().getWorld() == null || !block.getLocation().getWorld().equals(TardisWorldGen.getInteriorWorld())) return;
+            Bukkit.broadcastMessage("Adding ownership tag " + ownerID + " to location " + block.getLocation());
             tardis.addBlockOwnershipTag(block.getLocation(), Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE);
         };
     }

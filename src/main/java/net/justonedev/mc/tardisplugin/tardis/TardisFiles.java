@@ -18,8 +18,8 @@ import java.util.concurrent.Executors;
 
 public class TardisFiles {
     private static String TARDIS_FOLDER = "%s/tardises/";
-    private static String SINGLE_TARDIS_FOLDER_FORMAT = TARDIS_FOLDER + "t%d-%s/%s";
-    private static String MAIN_DATAHOLDER_FILE = "tardis.yml";
+    private static final String SINGLE_TARDIS_FOLDER_FORMAT = TARDIS_FOLDER + "t%d-%s/%s";
+    private static final String MAIN_DATAHOLDER_FILE = "tardis.yml";
 
     public static void initialize() {
         Bukkit.getLogger().info("Initializing File System");
@@ -43,10 +43,13 @@ public class TardisFiles {
 
         cfg.set("owner", tardis.getOwnerUUIDString());
         cfg.set("uuid", tardis.getTardisUUIDString());
+        cfg.set("plotID", tardis.getInteriorPlotID());
         cfg.set("exterior-shell.design", tardis.getOuterShellDesignIndex());
         saveBlockLocation(cfg, tardis.getTardisOuterShellLocation(), "exterior-shell.location");
         final var modelUUID = tardis.getTardisOuterShellUUID();
         cfg.set("presence", modelUUID.isEmpty() ? "" : modelUUID.get().toString());
+
+        TardisBlockData.saveBlockDataToFiles(tardis);
 
         try {
             cfg.save(file);
@@ -121,9 +124,9 @@ public class TardisFiles {
         return new Location(world, cfg.getInt(locName + ".x"), cfg.getInt(locName + ".y"), cfg.getInt(locName + ".z"));
     }
 
-    private static Location loadCenterBlockLocation(YamlConfiguration cfg, Location loc, String locName) {
-        return loadBlockLocation(cfg, locName).add(0.5, 0, 0.5);
-
+    private static Location loadCenterBlockLocation(YamlConfiguration cfg, String locName) {
+        Location loc = loadBlockLocation(cfg, locName);
+        return loc == null ? null : loc.add(0.5, 0, 0.5);
     }
 
     private static void saveBlockLocation(YamlConfiguration cfg, Location loc, String locName) {
