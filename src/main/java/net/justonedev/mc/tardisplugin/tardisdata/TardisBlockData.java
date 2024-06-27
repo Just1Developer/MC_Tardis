@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -20,10 +21,10 @@ import java.util.concurrent.Executors;
 public class TardisBlockData {
 
     private static final String BLOCKDATA_FILE = "%d.bdata";
-    private static final int BLOCKDATA_VALUES = 4;
+    public static final int BLOCKDATA_VALUES = 4;
     private static final int USING_BYTES = 5;
     
-    public static void initializeTardisAsync(Tardis tardis, File folder) {
+    public static void initializeTardisAsync(Tardis tardis) {
         var executor = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), BLOCKDATA_VALUES));
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < BLOCKDATA_VALUES; ++i) {
@@ -48,6 +49,7 @@ public class TardisBlockData {
     private static void applyBlockdata(Tardis tardis, File file, int value) {
         Location minLoc = tardis.getInteriorPlot().getMinLoc();
         assert file.exists();
+        Set<Vector> vectorSet = new HashSet<>();
         try (FileInputStream inputStream = new FileInputStream(file)) {
             byte bytenum = 0;
             int x = 0, y = 0, z = 0;
@@ -74,8 +76,10 @@ public class TardisBlockData {
                         z |= b;
                         break;
                     default:
+                        Vector vector = new Vector(x, y, z);
                         BlockUtils.setTardisBlockOwnership(minLoc.clone().add(x, y, z).getBlock(), value);
                         // Todo set in tardis object too
+                        vectorSet.add(vector);
 
                         bytenum = 0;
                         x = 0;
@@ -87,10 +91,11 @@ public class TardisBlockData {
         } catch (IOException e) {
             Bukkit.getLogger().warning("IOException occurred when reading file " + file.getName());
         }
+        tardis.setBlocksOwnedBy(value, vectorSet);
     }
 
     private static void saveBlockdata(Tardis tardis, int ownerID) {
-        Set<Vector> blocks = Set.of(new Vector(0, 1, 2));// todo tardis.getBlocksOwnedBy(ownerID);
+        Set<Vector> blocks = tardis.getBlocksOwnedBy(ownerID);
         if (blocks == null || blocks.isEmpty()) return;
         
         File file = TardisFiles.getFileForTardis(tardis, String.format(BLOCKDATA_FILE, ownerID));

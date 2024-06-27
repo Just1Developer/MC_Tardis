@@ -127,6 +127,9 @@ public class Quader {
                     // apply them to the block here
                     BlockUtils.setNBTTag(block, attr.getKey(), attr.getValue());
                 }
+                for (var func : injection.runFunctions) {
+                    func.run(block);
+                }
             }
         }
     }

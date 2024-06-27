@@ -1,6 +1,8 @@
 package net.justonedev.mc.tardisplugin.tardis;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
+import net.justonedev.mc.tardisplugin.schematics.BlockRunnable;
+import net.justonedev.mc.tardisplugin.tardisdata.TardisBlockData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -12,9 +14,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
+import static net.justonedev.mc.tardisplugin.TardisPlugin.getTardisByAnyPlotLocation;
 import static net.justonedev.mc.tardisplugin.tardis.TardisWorldGen.CONSOLE_CENTER_HEIGHT;
 import static net.justonedev.mc.tardisplugin.tardis.TardisWorldGen.PLOT_CENTER;
 
@@ -57,6 +64,8 @@ public class Tardis {
 
         Location loc = getAbsoluteConsoleLocation();
         spawnLocation = new Location(loc.getWorld(), loc.getBlockX() - 10.5, loc.getY(), loc.getBlockZ() + 0.5, 0, 0);
+
+        ownershipTracking = new ArrayList<Set<Vector>>();
 
         TardisPlugin.singleton.tardises.put(interiorPlotID, this);
         tardisCharger = new TardisCharger(this);
@@ -333,5 +342,56 @@ public class Tardis {
     public int getOuterShellDesignIndex() {
         return outerShellDesignIndex;
     }
+
+    //region Block ownership
+
+    List<Set<Vector>> ownershipTracking;
+
+    public Set<Vector> getBlocksOwnedBy(int ownerID) {
+        if (ownerID < 0 || ownerID >= ownershipTracking.size()) return Set.of();
+        return ownershipTracking.get(ownerID);
+    }
+
+    public void setBlocksOwnedBy(int ownerID, Set<Vector> vectors) {
+        ownershipTracking.set(ownerID, new HashSet<>(vectors));
+    }
+
+    public void addBlockOwnershipTag(Vector vector, int newOwner) {
+        if (newOwner < 0) return;
+        if (newOwner >= TardisBlockData.BLOCKDATA_VALUES) return;
+        while (ownershipTracking.size() <= newOwner) ownershipTracking.add(new HashSet<>());
+        ownershipTracking.get(newOwner).add(vector);
+    }
+
+    public void changeBlockOwnershipTag(Vector vector, int newOwner) {
+        for (var set : ownershipTracking) {
+            if (set.remove(vector)) break;
+        }
+        addBlockOwnershipTag(vector, newOwner);
+    }
+
+    public void addBlockOwnershipTag(Location totalLocation, int newOwner) {
+        addBlockOwnershipTag(toRelativeVector(totalLocation), newOwner);
+    }
+
+    public void changeBlockOwnershipTag(Location totalLocation, int newOwner) {
+        changeBlockOwnershipTag(toRelativeVector(totalLocation), newOwner);
+    }
+
+    private Vector toRelativeVector(Location totalLocation) {
+        return new Vector(totalLocation.getBlockX(), totalLocation.getBlockY(), totalLocation.getBlockZ())
+                .subtract(interiorPlot.getMinLoc().toVector());
+    }
+
+    public static BlockRunnable getSetOwnershipFunction(int ownerID) {
+        return (block) -> {
+            Tardis tardis = getTardisByAnyPlotLocation(block.getLocation());
+            if (tardis == null) return;
+            if (block.getLocation().getWorld() == null || !block.getLocation().getWorld().equals(TardisWorldGen.getInteriorWorld())) return;
+            tardis.addBlockOwnershipTag(block.getLocation(), Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE);
+        };
+    }
+
+    //endregion
 
 }
