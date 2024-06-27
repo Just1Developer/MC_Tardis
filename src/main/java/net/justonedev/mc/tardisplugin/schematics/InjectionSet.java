@@ -41,7 +41,7 @@ public class InjectionSet implements Iterable<BlockMetaDataInjection> {
 
     public Set<BlockMetaDataInjection> where(Material material, boolean airAsAny) {
         return injections.stream()
-                .filter(injection -> injection.material == material || (airAsAny && injection.material == Material.AIR))
+                .filter(injection -> injection.include.contains(material) || (airAsAny && injection.exclude.contains(material) && injection.include.contains(Material.AIR)))
                 .collect(Collectors.toUnmodifiableSet());
     }
 

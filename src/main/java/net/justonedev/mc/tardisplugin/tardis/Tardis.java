@@ -1,7 +1,9 @@
 package net.justonedev.mc.tardisplugin.tardis;
 
 import net.justonedev.mc.tardisplugin.TardisPlugin;
+import net.justonedev.mc.tardisplugin.schematics.BlockMetaDataInjection;
 import net.justonedev.mc.tardisplugin.schematics.BlockRunnable;
+import net.justonedev.mc.tardisplugin.schematics.Schematic;
 import net.justonedev.mc.tardisplugin.tardisdata.TardisBlockData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -66,7 +68,10 @@ public class Tardis {
         new TardisConsole(this);
 
         Location loc = getAbsoluteConsoleLocation();
-        spawnLocation = new Location(loc.getWorld(), loc.getBlockX() - 10.5, loc.getY(), loc.getBlockZ() + 0.5, 0, 0);
+        //spawnLocation = new Location(loc.getWorld(), loc.getBlockX() - 10.5, loc.getY(), loc.getBlockZ() + 0.5, 0, 0);
+        spawnLocation = loc.clone().add(CONTROL_ROOM_ENTRY_OFFSET);
+        spawnLocation.setYaw(-90);
+        spawnLocation.setPitch(0);
 
         ownershipTracking = new ArrayList<Set<Vector>>();
 
@@ -92,6 +97,7 @@ public class Tardis {
         tardisOuterShellDirection = currentModelTardis.getLocation().getDirection().multiply(-1);
         tardisOuterShellSpawnLocation = tardisOuterShellLocation.clone().add(tardisOuterShellDirection);
         bindCurrentModelTardis(tardisOuterShellUUID, false);
+        
         
         /*
         if (System.nanoTime() > 0) {
@@ -122,6 +128,10 @@ public class Tardis {
                 setUseTransparent(false);
                 setShellModelData(TardisConstants.DATA_TARDIS_SHELL_ORIGINAL);
                 Bukkit.getScheduler().cancelTask(animationScheduler);
+                
+                // Todo building async
+                buildTardisControlRoom();
+                TardisWorldGen.getInteriorWorld().loadChunk(spawnLocation.getChunk());
             }
         }, 0, 2);
 
@@ -227,6 +237,27 @@ public class Tardis {
         // Todo perhaps implement charging logic
     }
     
+    private static final Vector CONTROL_ROOM_OFFSET = new Vector(27, 8, 27);
+    private static final Vector CONTROL_ROOM_ENTRY_OFFSET = new Vector(-23.5, -0.8, 0.5);
+    
+    public void buildTardisSchematic(String schematicName, Location where) {
+        schematicName = "tardis" + schematicName;
+        Schematic schematic = new Schematic(schematicName);
+        schematic.with(new BlockMetaDataInjection(Material.AIR).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)
+                        .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)).excludeMaterial(Material.BARRIER))
+                    .placeInWorldAsync(where);
+    }
+    
+    public void buildTardisControlRoom() {
+        Location where = getAbsoluteConsoleLocation().clone().subtract(CONTROL_ROOM_OFFSET);
+        Schematic schematic = new Schematic("tardiscontrolroom");
+        schematic.with(new BlockMetaDataInjection().addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE)
+                        .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE)).addMaterials(Set.of(Material.DIAMOND_BLOCK, Material.NETHERITE_BLOCK, Material.GLASS)))
+                .with(new BlockMetaDataInjection(Material.AIR).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)
+                        .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)).excludeMaterial(Material.BARRIER))
+                    .placeInWorldAsync(where);
+    }
+    
     /**
      * Gets a direction vector from the ArmorStand model's viewing direction. Returned vector is a copy.
      * Returns a vector (0,0,0) when anything is null.
@@ -307,6 +338,7 @@ public class Tardis {
      * @param player The player.
      */
     public void enter(Player player) {
+        //TardisWorldGen.getInteriorWorld().loadChunk(spawnLocation.getChunk());
         player.teleport(spawnLocation);
     }
 
@@ -367,6 +399,9 @@ public class Tardis {
     }
 
     public void setBlocksOwnedBy(int ownerID, Set<Vector> vectors) {
+        if (ownerID < 0) return;
+        if (ownerID >= TardisBlockData.BLOCKDATA_VALUES) return;
+        while (ownershipTracking.size() <= ownerID) ownershipTracking.add(new HashSet<>());
         ownershipTracking.set(ownerID, new HashSet<>(vectors));
     }
 
@@ -399,14 +434,11 @@ public class Tardis {
 
     public static BlockRunnable getSetOwnershipFunction(int ownerID) {
         return (block) -> {
-            Bukkit.broadcastMessage("§e1");
             Tardis tardis = getTardisByAnyPlotLocation(block.getLocation());
-            Bukkit.broadcastMessage("§a2 + " + tardis);
             if (tardis == null) return;
-            Bukkit.broadcastMessage("§d3");
             if (block.getLocation().getWorld() == null || !block.getLocation().getWorld().equals(TardisWorldGen.getInteriorWorld())) return;
-            Bukkit.broadcastMessage("Adding ownership tag " + ownerID + " to location " + block.getLocation());
-            tardis.addBlockOwnershipTag(block.getLocation(), Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE);
+            //Bukkit.broadcastMessage("Adding ownership tag " + ownerID + " to location " + block.getLocation());
+            tardis.addBlockOwnershipTag(block.getLocation(), ownerID);
         };
     }
 
