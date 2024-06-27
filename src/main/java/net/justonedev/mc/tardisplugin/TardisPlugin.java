@@ -6,6 +6,7 @@ import net.justonedev.mc.tardisplugin.schematics.Schematic;
 import net.justonedev.mc.tardisplugin.schematics.SchematicFactory;
 import net.justonedev.mc.tardisplugin.schematics.SchematicMaker;
 import net.justonedev.mc.tardisplugin.tardis.Tardis;
+import net.justonedev.mc.tardisplugin.tardis.TardisCharger;
 import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
 import net.justonedev.mc.tardisplugin.tardis.TardisModelType;
@@ -80,7 +81,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         TardisWorldGen.initialize();
         TardisFiles.initialize();
         
-        System.out.println("ID: " + TardisModelType.TARDIS_OUTER_STATIC.customModelData);
+        TardisCharger.startChargingScheduler();
     }
 
     @Override

@@ -43,13 +43,13 @@ public class Tardis {
     private final int interiorPlotID;
     private final TardisInteriorPlot interiorPlot;
     private final Location spawnLocation;
+    
+    private boolean isCharging;
 
     private UUID tardisOuterShellUUID;
     private Location tardisOuterShellLocation;
     private Vector tardisOuterShellDirection;
     private Location tardisOuterShellSpawnLocation;
-
-    private TardisCharger tardisCharger;
 
     private TardisConsole tardisConsole;
 
@@ -59,6 +59,7 @@ public class Tardis {
         this.tardisUUID = tardisUUID;
         this.interiorPlotID = interiorPlotID;
         this.outerShellDesignIndex = outerShellDesignIndex;
+        this.isCharging = false;
         // Todo do we need this?
         Optional<TardisInteriorPlot> plot = TardisWorldGen.calculateInteriorPlotByID(interiorPlotID);
         this.interiorPlot = plot.orElseGet(() -> new TardisInteriorPlot((int) (-3 * 1e7), (int) (-3 * 1e7)));
@@ -70,7 +71,6 @@ public class Tardis {
         ownershipTracking = new ArrayList<Set<Vector>>();
 
         TardisPlugin.singleton.tardises.put(interiorPlotID, this);
-        tardisCharger = new TardisCharger(this);
     }
 
     public static Tardis createNewTardis(UUID owner) {
@@ -218,6 +218,15 @@ public class Tardis {
         return interiorPlotID;
     }
     
+    public boolean isCharging() {
+        return isCharging;
+    }
+    
+    public void setCharging(boolean isCharging) {
+        this.isCharging = isCharging;
+        // Todo perhaps implement charging logic
+    }
+    
     /**
      * Gets a direction vector from the ArmorStand model's viewing direction. Returned vector is a copy.
      * Returns a vector (0,0,0) when anything is null.
@@ -288,8 +297,6 @@ public class Tardis {
         if (armorStandUUID == null) return;
         if (overrideModel) this.tardisOuterShellUUID = armorStandUUID;
         TardisPlugin.singleton.tardisesByEntityUUID.put(armorStandUUID, this);
-
-        tardisCharger.startCheckingForCharge();
 
         // Todo if the model data suggests disappearing animation, remove and do not bind
         // Todo if the model data suggests appearing animation, just set the tardis there.
