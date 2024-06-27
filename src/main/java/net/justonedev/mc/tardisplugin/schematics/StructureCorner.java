@@ -30,11 +30,11 @@ public class StructureCorner {
 		List<Vector> explorables = new ArrayList<>();
 		int dimensions = 0;
 		if (north) { explorables.add(NORTH); dimensions++; }
-		else if(south) { explorables.add(SOUTH); dimensions++; }
+		if (south) { explorables.add(SOUTH); dimensions++; }
 		if (east) { explorables.add(EAST); dimensions++; }
-		else if (west) { explorables.add(WEST); dimensions++; }
+		if (west) { explorables.add(WEST); dimensions++; }
 		if (up) { explorables.add(UP); dimensions++; }
-		else if (down) { explorables.add(DOWN); dimensions++; }
+		if (down) { explorables.add(DOWN); dimensions++; }
 		
 		// Create all linear combinations of all expansion directions
 		

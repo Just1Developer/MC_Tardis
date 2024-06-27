@@ -304,7 +304,7 @@ public class SchematicFactory {
 		return loc.getBlockX() == vector.getBlockX() && loc.getBlockY() == vector.getBlockY()  && loc.getBlockZ() == vector.getBlockZ();
 	}
 	
-	private static final boolean ALLOW_EDGES_AS_CORNERS = true;
+	private static final boolean ALLOW_EDGES_AS_CORNERS = false;
 	private Map<Material, List<StructureCorner>> findCorners(Map<Material, List<BlockData>> blockData) {
 		Map<Material, List<StructureCorner>> structureCorners = new HashMap<>();
 		
@@ -329,7 +329,7 @@ public class SchematicFactory {
 				int yAxis = (u ? 1 : 0) + (d ? 1 : 0);
 				int zAxis = (e ? 1 : 0) + (w ? 1 : 0);
 				
-				if (xAxis < 2 && yAxis < 2 && zAxis < 2) {
+				if (xAxis < 2 && yAxis < 2 && zAxis < 2 || (ALLOW_EDGES_AS_CORNERS && (xAxis == 2 && yAxis < 2 && zAxis < 2 || xAxis < 2 && yAxis == 2 && zAxis < 2 || xAxis < 2 && yAxis < 2 && zAxis == 2))) {
 					StructureCorner corner = new StructureCorner(data, n, s, e, w, u, d);
 					if (structureCorners.containsKey(data.material)) {
 						structureCorners.get(data.material).add(corner);
@@ -385,7 +385,7 @@ public class SchematicFactory {
 						if (d) axis.add(DOWN.clone());
 						corners.add(new StructureCorner(data, axis));
 					}*/
-					if (xAxis < 2 && yAxis < 2 && zAxis < 2) {
+					if (xAxis < 2 && yAxis < 2 && zAxis < 2 || (ALLOW_EDGES_AS_CORNERS && (xAxis == 2 && yAxis < 2 && zAxis < 2 || xAxis < 2 && yAxis == 2 && zAxis < 2 || xAxis < 2 && yAxis < 2 && zAxis == 2))) {
 						corners.add(new StructureCorner(data, n, s, e, w, u, d));
 					}
 				}
