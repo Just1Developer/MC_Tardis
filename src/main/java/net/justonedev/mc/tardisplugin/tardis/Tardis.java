@@ -47,6 +47,10 @@ public class Tardis {
     private final Location spawnLocation;
     
     private boolean isCharging;
+    /**
+     * If the tardis can be joined. Generally the case, just not when the control room is (re-)building.
+     */
+    private boolean isReady;
 
     private UUID tardisOuterShellUUID;
     private Location tardisOuterShellLocation;
@@ -62,6 +66,7 @@ public class Tardis {
         this.interiorPlotID = interiorPlotID;
         this.outerShellDesignIndex = outerShellDesignIndex;
         this.isCharging = false;
+        this.isReady = true;
         // Todo do we need this?
         Optional<TardisInteriorPlot> plot = TardisWorldGen.calculateInteriorPlotByID(interiorPlotID);
         this.interiorPlot = plot.orElseGet(() -> new TardisInteriorPlot((int) (-3 * 1e7), (int) (-3 * 1e7)));
@@ -249,6 +254,7 @@ public class Tardis {
     }
     
     public void buildTardisControlRoom() {
+        isReady = false;
         Location where = getAbsoluteConsoleLocation().clone().subtract(CONTROL_ROOM_OFFSET);
         Schematic schematic = new Schematic("tardiscontrolroom");
         schematic.with(new BlockMetaDataInjection().addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE)
@@ -256,6 +262,7 @@ public class Tardis {
                 .with(new BlockMetaDataInjection(Material.AIR).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)
                         .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)).excludeMaterial(Material.BARRIER))
                     .placeInWorldAsync(where);
+        isReady = true;
     }
     
     /**
@@ -338,6 +345,7 @@ public class Tardis {
      * @param player The player.
      */
     public void enter(Player player) {
+        if (!isReady) return;
         //TardisWorldGen.getInteriorWorld().loadChunk(spawnLocation.getChunk());
         player.teleport(spawnLocation);
     }
