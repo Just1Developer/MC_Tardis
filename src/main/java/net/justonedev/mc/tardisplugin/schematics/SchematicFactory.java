@@ -72,9 +72,12 @@ public class SchematicFactory {
 			blockData = scanEnvironmentAsync2(minLocation, bounds);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scan completed in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Finding corners..."); oldtime = time;
 			structureCorners = findCornersAsync(blockData);
+			System.out.println("Corners: " + structureCorners);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Found all corners in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Creating quaders..."); oldtime = time;
 			allQuaders = findAllQuadersAsync(blockData, structureCorners);
-			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Quaders created in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Making clusters..."); oldtime = time;
+			int size = 0;
+			for (var val : allQuaders.values()) size += val.size();
+			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] " + size + " Quaders created in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Making clusters..."); oldtime = time;
 		} else {
 			Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scanning environment...");
 			oldtime = System.nanoTime();
@@ -292,10 +295,8 @@ public class SchematicFactory {
 		}
 		
 		// Convert to regular HashMap to return (if needed outside concurrent context)
-		Map<Material, List<BlockData>> blockData = new HashMap<>();
-		concurrentBlockData.forEach(blockData::put);
 		
-		return blockData;
+		return new HashMap<>(concurrentBlockData);
 	}
 	
 	private static final Vector UP = new Vector(0, 1, 0), DOWN = new Vector(0, -1, 0), NORTH = new Vector(1, 0, 0), EAST = new Vector(0, 0, 1), SOUTH = new Vector(-1, 0, 0), WEST = new Vector(0, 0, -1);
@@ -329,19 +330,13 @@ public class SchematicFactory {
 				int yAxis = (u ? 1 : 0) + (d ? 1 : 0);
 				int zAxis = (e ? 1 : 0) + (w ? 1 : 0);
 				
-				if (xAxis < 2 && yAxis < 2 && zAxis < 2 || (ALLOW_EDGES_AS_CORNERS && (xAxis == 2 && yAxis < 2 && zAxis < 2 || xAxis < 2 && yAxis == 2 && zAxis < 2 || xAxis < 2 && yAxis < 2 && zAxis == 2))) {
-					List<Vector> axis = new ArrayList<>();
-					if (n) axis.add(NORTH.clone());
-					if (s) axis.add(SOUTH.clone());
-					if (e) axis.add(EAST.clone());
-					if (w) axis.add(WEST.clone());
-					if (u) axis.add(UP.clone());
-					if (d) axis.add(DOWN.clone());
+				if (xAxis < 2 && yAxis < 2 && zAxis < 2) {
+					StructureCorner corner = new StructureCorner(data, n, s, e, w, u, d);
 					if (structureCorners.containsKey(data.material)) {
-						structureCorners.get(data.material).add(new StructureCorner(data, axis));
+						structureCorners.get(data.material).add(corner);
 					} else {
 						List<StructureCorner> list = new ArrayList<>();
-						list.add(new StructureCorner(data, axis));
+						list.add(corner);
 						structureCorners.put(data.material, list);
 					}
 				}
@@ -380,6 +375,7 @@ public class SchematicFactory {
 					int yAxis = (u ? 1 : 0) + (d ? 1 : 0);
 					int zAxis = (e ? 1 : 0) + (w ? 1 : 0);
 					
+					/*
 					if (xAxis < 2 && yAxis < 2 && zAxis < 2 || (ALLOW_EDGES_AS_CORNERS && (xAxis == 2 && yAxis < 2 && zAxis < 2 || xAxis < 2 && yAxis == 2 && zAxis < 2 || xAxis < 2 && yAxis < 2 && zAxis == 2))) {
 						List<Vector> axis = new ArrayList<>();
 						if (n) axis.add(NORTH.clone());
@@ -389,6 +385,9 @@ public class SchematicFactory {
 						if (u) axis.add(UP.clone());
 						if (d) axis.add(DOWN.clone());
 						corners.add(new StructureCorner(data, axis));
+					}*/
+					if (xAxis < 2 && yAxis < 2 && zAxis < 2) {
+						corners.add(new StructureCorner(data, n, s, e, w, u, d));
 					}
 				}
 				return corners;
@@ -422,12 +421,6 @@ public class SchematicFactory {
 		// Go through all the blocks.
 		for (Material mat : blockData.keySet()) {
 			
-			
-			/*
-			Set<Vector> cornerLocations = new HashSet<>();
-			for (var data : structureCorners.get(mat)) {
-				cornerLocations.add(data.blockData.location);
-			}*/
 			List<StructureCorner> corners = structureCorners.get(mat);
 			if (corners == null) {
 				Bukkit.getLogger().warning("List for material " + mat + " was null, not copying.");
@@ -441,19 +434,15 @@ public class SchematicFactory {
 					if (data.isDataSame(corner.blockData)) blockLocations.add(data.location);
 				}
 				
-				if (corner.startingAxis.isEmpty()) {
+				if (corner.explorerPaths.isEmpty()) {
 					// Single block, just build one (1) quader
 					Quader quader = new Quader(corner.blockData, corner.blockData.location, corner.blockData.location);
 					registerNewQuader(allQuaders, corner, quader);
 				} else {
-					while (!corner.startingAxis.isEmpty()) {
-						//Quader quader = new Quader();
-						
-						Vector start = corner.blockData.location.clone(), end = corner.blockData.location.clone();
-						
-						Vector currentAxis = corner.startingAxis.get(0);
-						corner.startingAxis.remove(currentAxis);
-						Set<Vector> expanded = new HashSet<>();
+					Vector start = corner.blockData.location.clone(), end = corner.blockData.location.clone();
+					for (var currentExplorer : corner.explorerPaths) {
+						int explorerIndex = 0;
+						Vector currentAxis = currentExplorer[explorerIndex];
 						
 						while (currentAxis != null) {
 							final boolean negativeExpansion = isNegativeExpansion(currentAxis);
@@ -475,16 +464,8 @@ public class SchematicFactory {
 								else end.add(currentAxis);
 							}
 							
-							// Now choose next axis. X -> Y, Y -> Z and Z -> X
-							expanded.add(currentAxis);
-							Vector preferred = currentAxis.getX() != 0 ? new Vector(0, 1, 0) : currentAxis.getY() != 0 ? new Vector(0, 0, 1) : new Vector(1, 0, 0);
-							currentAxis = null;
-							
-							for (Vector visitable : corner.explorableAxis) {
-								if (expanded.contains(visitable)) continue;
-								currentAxis = visitable;
-								if (currentAxis.equals(preferred)) break;	// Loop through all and choose to stay at preferred
-							}
+							explorerIndex++;
+							currentAxis = explorerIndex <= currentExplorer.length ? currentExplorer[explorerIndex] : null;
 						}
 						// Now we've expanded all we can
 						
@@ -512,7 +493,6 @@ public class SchematicFactory {
 		return vector.getBlockX() < 0 || vector.getBlockY() < 0 || vector.getBlockZ() < 0;
 	}
 	
-	// Todo check for errors
 	private Set<Vector> getNextBlockRow(Vector start, Vector end, Vector expansionDirection) {
 		// Get direction. It is guaranteed that only one coordinate is != 0 at a time.
 		int fromX, toX, fromY, toY, fromZ, toZ;
@@ -635,41 +615,45 @@ public class SchematicFactory {
 	}
 	
 	private void processCorner(StructureCorner corner, Set<Vector> blockLocations, Set<Quader> quaders) {
-		if (corner.startingAxis.isEmpty()) {
+		if (corner.explorerPaths.isEmpty()) {
 			Quader quader = new Quader(corner.blockData, corner.blockData.location, corner.blockData.location);
 			quaders.add(quader);
 		} else {
-			while (!corner.startingAxis.isEmpty()) {
+			while (!corner.explorerPaths.isEmpty()) {
 				Vector start = corner.blockData.location.clone(), end = corner.blockData.location.clone();
-				Vector currentAxis = corner.startingAxis.get(0);
-				corner.startingAxis.remove(currentAxis);
-				Set<Vector> expanded = new HashSet<>();
+				Vector[] currentExplorer = corner.explorerPaths.get(0);
+				int explorerIndex = 0;
+				Vector currentAxis = currentExplorer[explorerIndex];
 				
-				expandAlongAxis(start, end, currentAxis, expanded, blockLocations);
+				while (currentAxis != null) {
+					Bukkit.broadcastMessage("currentAxis: " + currentAxis);
+					final boolean negativeExpansion = isNegativeExpansion(currentAxis);
+					while (true) {
+						var blockRow = getNextBlockRow(start, end, currentAxis);
+						if (blockRow.isEmpty()) break;
+						boolean _break = false;
+						for (Vector block : blockRow) {
+							if (!blockLocations.contains(block)) {
+								// Exploration finished, can't explore further
+								_break = true;
+								break;
+							}
+						}
+						if (_break) break;
+						
+						if (negativeExpansion) start.add(currentAxis);
+						else end.add(currentAxis);
+					}
+					
+					explorerIndex++;
+					currentAxis = explorerIndex <= currentExplorer.length ? currentExplorer[explorerIndex] : null;
+				}
+				Bukkit.broadcastMessage("Done.");
 				
 				// Now we've expanded all we can
 				Quader quader = new Quader(corner.blockData, start, end);
 				quaders.add(quader);
 			}
-		}
-	}
-	
-	private void expandAlongAxis(Vector start, Vector end, Vector currentAxis, Set<Vector> expanded, Set<Vector> blockLocations) {
-		final boolean negativeExpansion = isNegativeExpansion(currentAxis);
-		while (true) {
-			var blockRow = getNextBlockRow(start, end, currentAxis);
-			if (blockRow.isEmpty()) break;
-			boolean _break = false;
-			for (Vector block : blockRow) {
-				if (!blockLocations.contains(block)) {
-					_break = true;
-					break;
-				}
-			}
-			if (_break) break;
-			
-			if (negativeExpansion) start.add(currentAxis);
-			else end.add(currentAxis);
 		}
 	}
 	
