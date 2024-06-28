@@ -86,7 +86,7 @@ public class SchematicFactory {
 				} else {
 					allQuaders = findAllQuadersAsync(blockData, structureCorners);
 				}
-			} while (!blockData.isEmpty() && USE_LOOPED_SEARCH && runs < 5);
+			} while (!blockData.isEmpty() && USE_LOOPED_SEARCH);
 			int quaderAmount = 0;
 			for (var val : allQuaders.values()) quaderAmount += val.size();
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] " + quaderAmount + " Quaders created in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Making clusters..."); oldtime = time;

@@ -31,9 +31,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.EulerAngle;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,7 +68,9 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
 
         getCommand("makeschematic").setExecutor(this);
         getCommand("buildschematic").setExecutor(this);
+        getCommand("buildschematic").setTabCompleter(this);
         getCommand("breakdownschematic").setExecutor(this);
+        getCommand("breakdownschematic").setTabCompleter(this);
         getCommand("schematics").setExecutor(this);
         getCommand("schmaker").setExecutor(schmaker);
 
@@ -277,5 +283,28 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             b3.setBlockData(sdata3);
         }
         return true;
+    }
+
+    @Nullable
+    @Override
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+        if (sender instanceof Player) {
+            if (command.getName().equalsIgnoreCase("buildschematic") || command.getName().equalsIgnoreCase("breakdownschematic")) {
+                if (args.length == 0) {
+                    List<String> names = new ArrayList<>();
+                    File folder = new File(getDataFolder() + "/schematics/");
+                    if (!folder.exists()) return super.onTabComplete(sender, command, alias, args);
+                    for (File f : folder.listFiles()) {
+                        if (!f.getName().endsWith(".tschem")) continue;
+                        String[] path = f.getName().contains("/") ? f.getName().split("/") : f.getName().contains("\\") ? f.getName().split("\\\\") : new String[] { f.getName() };
+                        if (path == null || path.length == 0) continue;
+                        String name = path[path.length - 1];
+                        names.add(name);
+                    }
+                    return names;
+                }
+            }
+        }
+        return super.onTabComplete(sender, command, alias, args);
     }
 }
