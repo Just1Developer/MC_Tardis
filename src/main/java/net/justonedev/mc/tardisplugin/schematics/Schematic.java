@@ -5,6 +5,7 @@ import net.justonedev.mc.tardisplugin.schematics.rotation.Rotation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -70,24 +71,36 @@ public class Schematic {
 	}
 	
 	public Schematic placeInWorld(Location where) {
+		placeInWorld(where, null);
+		return this;
+	}
+	public Schematic placeInWorld(Location where, Player callback) {
 		for (var cluster : clusters) cluster.placeInWorld(where, Rotation.None, Injections.where(cluster.material, true));
-		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
+		String result = String.format("Built Schematic at Location (%s, %d, %d, %d)",
 				where.getWorld() == null ? "unknown" : where.getWorld().getName(),
 				where.getBlockX(),
 				where.getBlockY(),
-				where.getBlockZ()));
+				where.getBlockZ());
+		Bukkit.getLogger().info(result);
+		if (callback != null) callback.sendMessage("§e" + result);
 		return this;
 	}
 	
 	public Schematic placeInWorldAsync(Location where) {
+		placeInWorldAsync(where, null);
+		return this;
+	}
+	public Schematic placeInWorldAsync(Location where, Player callback) {
 		for (var cluster : clusters) {
 			Bukkit.getScheduler().runTask(TardisPlugin.singleton, () -> cluster.placeInWorldAsync(where, Rotation.None, Injections.where(cluster.material, true)));
 		}
-		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
+		String result = String.format("Built Schematic at Location (%s, %d, %d, %d)",
 				where.getWorld() == null ? "unknown" : where.getWorld().getName(),
 				where.getBlockX(),
 				where.getBlockY(),
-				where.getBlockZ()));
+				where.getBlockZ());
+		Bukkit.getLogger().info(result);
+		if (callback != null) callback.sendMessage("§e" + result);
 		return this;
 	}
 	
@@ -122,7 +135,7 @@ public class Schematic {
 	
 	boolean buildCorners = false;
 	Material CornerMaterial = Material.REDSTONE_BLOCK;
-	public void placeBreakdown(Location where) {
+	public String placeBreakdown(Location where) {
 		int beginIndex = 0;
 		for (var cluster : clusters) {
 			beginIndex = cluster.placeBreakdown(where, beginIndex);
@@ -132,11 +145,13 @@ public class Schematic {
 				cluster.placeCorners(where, CornerMaterial);
 			}
 		}
-		Bukkit.getLogger().info(String.format("Built Schematic at Location (%s, %d, %d, %d)",
+		String result = String.format("Built Schematic at Location (%s, %d, %d, %d)",
 				where.getWorld() == null ? "unknown" : where.getWorld().getName(),
 				where.getBlockX(),
 				where.getBlockY(),
-				where.getBlockZ()));
+				where.getBlockZ());
+		Bukkit.getLogger().info(result);
+		return result;
 	}
 	
 	private void readFile(File file) {

@@ -192,7 +192,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
             boolean captureAir = false;
             if (args.length > 7) captureAir = Boolean.parseBoolean(args[7]);
             
-            SchematicFactory.createSchematicAsync(name, firstLoc, secondLoc, captureAir);
+            SchematicFactory.createSchematicAsync(name, firstLoc, secondLoc, captureAir, p);
         } else if (command.getName().equals("buildschematic")) {
             File file = new File(getDataFolder() + "/schematics/", args[0] + Schematic.FILE_ENDING);
             if (!file.exists()) {
@@ -228,7 +228,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
                     .with(new BlockMetaDataInjection(Material.AIR).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)
                             .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)))
                     : schematic)
-                    .placeInWorldAsync(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
+                    .placeInWorldAsync(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1), p);
         } else if (command.getName().equals("breakdownschematic")) {
             File file = new File(getDataFolder() + "/schematics/", args[0] + Schematic.FILE_ENDING);
             if (!file.exists()) {
@@ -236,7 +236,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
                 return true;
             }
             Schematic schematic = new Schematic(file);
-            schematic.placeBreakdown(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1));
+            p.sendMessage(schematic.placeBreakdown(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1)));
         } else if (command.getName().equals("schematics")) {
             File[] files = new File(getDataFolder() + "/schematics/").listFiles();
             if (files == null || files.length == 0) {
