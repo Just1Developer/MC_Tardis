@@ -384,15 +384,11 @@ public class BlockData {
     
     @Override
     public boolean equals(Object o) {
-        System.out.println("0: " + getClass() + " other: " + o.getClass());
         if (this == o) return true;
         if (o == null) return false;
-        System.out.println("1: " + getClass() + " other: " + o.getClass());
         if (getClass() != o.getClass()) {
-            System.out.println("2");
             if (o instanceof Vector) {
-                System.out.println("Comparing if vector: " + location + " equals " + o + " : " + Objects.equals(this.location, (Vector) o));
-                return Objects.equals(this.location, (Vector) o);
+                return Objects.equals(this.location, o);
             }
             return false;
         }

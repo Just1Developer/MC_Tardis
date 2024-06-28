@@ -82,13 +82,7 @@ public class SchematicFactory {
 				Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] [Run " + (++runs) + "] Found all corners in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Creating quaders...");
 				oldtime = time;
 				if (USE_LOOPED_SEARCH) {
-					int size = 0;
-					for (var val : allQuaders.values()) size += val.size();
-					Bukkit.broadcastMessage("§bSize before: " + size);
 					findAllQuadersAsync2(allQuaders, blockData, structureCorners);
-					size = 0;
-					for (var val : allQuaders.values()) size += val.size();
-					Bukkit.broadcastMessage("§bSize after: " + size);
 				} else {
 					allQuaders = findAllQuadersAsync(blockData, structureCorners);
 				}
@@ -652,7 +646,7 @@ public class SchematicFactory {
 	}
 
 	/**
-	 * Careful, modifies the blockdata map.
+	 * Careful, modifies the blockdata and allQuaders maps.
 	 * @param blockData
 	 * @param structureCorners
 	 * @return
@@ -698,36 +692,22 @@ public class SchematicFactory {
 		}
 
 		// Collect all results
-		int size = 0;
-		for (var val : blockData.values()) size += val.size();
-		System.out.println("§eReducing size of blockdata... (former: " + size + ")");
 		futures.forEach((material, future) -> {
 			try {
 				var pair = future.get();
 				var list = allQuaders.getOrDefault(material, new HashSet<>());
-				Bukkit.broadcastMessage("§e[" + material + "] Adding " + pair.value2.size() + " quaders to list of size " + list.size() + ".");
 				list.addAll(pair.value2);
 				allQuaders.put(material, list);
-				Bukkit.broadcastMessage("§d[" + material + "] Quaders size for material is: " + allQuaders.get(material).size() + ".");
-				/*
-				if (allQuaders.containsKey(material)) allQuaders.get(material).addAll(pair.value2);
-				else allQuaders.put(material, pair.value2);
-				 */
 				if (blockData.containsKey(material)) {
-					//blockData.get(material).removeAll(pair.value1);
 					// Remove all does not work unless we override BlockData.hashCode() to match only location
 					blockData.get(material).removeIf(blockDataItem -> pair.value1.contains(blockDataItem.location));
 					if (blockData.get(material).isEmpty()) blockData.remove(material);
-					System.out.println("Removed " + pair.value1.size() + " elements for material " + material);
 				}
 			} catch (InterruptedException | ExecutionException e) {
 				Bukkit.getLogger().warning("Failed to compute quaders for " + material);
 				Thread.currentThread().interrupt();
 			}
 		});
-		size = 0;
-		for (var val : blockData.values()) size += val.size();
-		System.out.println("§dReduced size of blockdata... (latter: " + size + ")");
 	}
 	
 	private void processCorner(StructureCorner corner, Set<Vector> blockLocations, Set<Quader> quaders) {
