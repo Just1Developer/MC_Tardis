@@ -416,4 +416,12 @@ public class BlockData {
     public int hashCode() {
         return Objects.hash(location, material, Attributes);
     }
+    
+    /**
+     * Hashes Material and Attributes only. Corresponding equals() is isDataSame().
+     * @return Hash code for material and attributes.
+     */
+    public int hashCode2() {
+        return Objects.hash(material, Attributes);
+    }
 }

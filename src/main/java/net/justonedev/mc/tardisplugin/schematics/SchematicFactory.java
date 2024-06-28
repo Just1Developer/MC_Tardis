@@ -384,22 +384,44 @@ public class SchematicFactory {
 		// Submit tasks for each material to the executor service
 		for (Material mat : blockData.keySet()) {
 			futureResults.put(mat, executor.submit(() -> {
+				long time = System.nanoTime();
 				List<StructureCorner> corners = new ArrayList<>();
+				HashMap<Integer, Set<Vector>> seenLocationsMap = new HashMap<>();
+				for (var data : blockData.get(mat)) {
+					int hash = data.hashCode2();
+					if (seenLocationsMap.containsKey(hash)) {
+						seenLocationsMap.get(hash).add(data.location);
+					} else {
+						Set<Vector> set = new HashSet<>();
+						set.add(data.location);
+						seenLocationsMap.put(hash, set);
+					}
+				}
 				for (var data : blockData.get(mat)) {
 					// set probably has better access time than our List
-					Set<Vector> seenLocations = new HashSet<>();
+					var seenLocations = seenLocationsMap.getOrDefault(data.hashCode2(), null);
+					if (seenLocations == null) continue;
+					
+					/*
 					for (var _data : blockData.get(mat)) {
 						if (data.isDataSame(_data)) seenLocations.add(_data.location);
-					}
+					}*/
 					
 					// We have a block. To be a corner, the block needs to have max. 1 neighbor on each axis.
 					// In total, we are looking for six neighbors.
-					boolean n = seenLocations.contains(data.location.clone().add(NORTH)),
-							e = seenLocations.contains(data.location.clone().add(EAST)),
-							s = seenLocations.contains(data.location.clone().add(SOUTH)),
-							w = seenLocations.contains(data.location.clone().add(WEST)),
-							u = seenLocations.contains(data.location.clone().add(UP)),
-							d = seenLocations.contains(data.location.clone().add(DOWN));
+					boolean n = seenLocations.contains(data.location.clone().add(NORTH));
+					boolean s = seenLocations.contains(data.location.clone().add(SOUTH));
+					if (n && s) continue;
+					boolean e = seenLocations.contains(data.location.clone().add(EAST));
+					boolean w = seenLocations.contains(data.location.clone().add(WEST));
+					if (e && w) continue;
+					boolean u = seenLocations.contains(data.location.clone().add(UP));
+					boolean d = seenLocations.contains(data.location.clone().add(DOWN));
+					if (u && d) continue;
+					
+					corners.add(new StructureCorner(data, n, s, e, w, u, d));
+					
+					/*
 					int xAxis = (n ? 1 : 0) + (s ? 1 : 0);
 					int yAxis = (u ? 1 : 0) + (d ? 1 : 0);
 					int zAxis = (e ? 1 : 0) + (w ? 1 : 0);
@@ -414,11 +436,13 @@ public class SchematicFactory {
 						if (u) axis.add(UP.clone());
 						if (d) axis.add(DOWN.clone());
 						corners.add(new StructureCorner(data, axis));
-					}*/
+					}* /
 					if (xAxis < 2 && yAxis < 2 && zAxis < 2 || (ALLOW_EDGES_AS_CORNERS && (xAxis == 2 && yAxis < 2 && zAxis < 2 || xAxis < 2 && yAxis == 2 && zAxis < 2 || xAxis < 2 && yAxis < 2 && zAxis == 2))) {
 						corners.add(new StructureCorner(data, n, s, e, w, u, d));
 					}
+					*/
 				}
+				Bukkit.broadcastMessage("Found " + corners.size() + " Corners for Material " + mat + " in " + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms");
 				return corners;
 			}));
 		}
@@ -670,7 +694,7 @@ public class SchematicFactory {
 					Bukkit.getLogger().warning("List for material " + material + " was null, not copying.");
 					return new Pair<>(processedBlocks, quaders);
 				}
-
+				long time = System.nanoTime();
 				for (var corner : corners) {
 					Set<Vector> blockLocations = new HashSet<>();
 					for (var data : blockData.get(material)) {
@@ -679,6 +703,7 @@ public class SchematicFactory {
 
 					processedBlocks.addAll(processCorner2(corner, blockLocations, quaders));
 				}
+				Bukkit.broadcastMessage("Found " + quaders.size() + " Quaders for Material " + mat + " in " + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms");
 				return new Pair<>(processedBlocks, quaders);
 			}));
 		}
@@ -705,6 +730,7 @@ public class SchematicFactory {
 				}
 			} catch (InterruptedException | ExecutionException e) {
 				Bukkit.getLogger().warning("Failed to compute quaders for " + material);
+				e.printStackTrace();
 				Thread.currentThread().interrupt();
 			}
 		});
