@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.io.File;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 public class SchematicFactory {
 
 	private static final int NANO_TO_MILLI_TIME = 1000000;
+	boolean USE_LOOPED_SEARCH = true;
 
 	private final Vector bounds;
 	final String schematicName;
@@ -65,15 +67,32 @@ public class SchematicFactory {
 		this.bounds = bounds.clone();
 
 		long time, oldtime;
-		
+
 		if (async) {
 			Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scanning environment...");
 			oldtime = System.nanoTime();
 			blockData = scanEnvironmentAsync2(minLocation, bounds);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scan completed in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Finding corners..."); oldtime = time;
-			structureCorners = findCornersAsync(blockData);
-			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Found all corners in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Creating quaders..."); oldtime = time;
-			allQuaders = findAllQuadersAsync(blockData, structureCorners);
+
+			int runs = 0;
+			allQuaders = new HashMap<>();
+			do {
+				structureCorners = findCornersAsync(blockData);
+				time = System.nanoTime();
+				Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] [Run " + (++runs) + "] Found all corners in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Creating quaders...");
+				oldtime = time;
+				if (USE_LOOPED_SEARCH) {
+					int size = 0;
+					for (var val : allQuaders.values()) size += val.size();
+					Bukkit.broadcastMessage("§bSize before: " + size);
+					findAllQuadersAsync2(allQuaders, blockData, structureCorners);
+					size = 0;
+					for (var val : allQuaders.values()) size += val.size();
+					Bukkit.broadcastMessage("§bSize after: " + size);
+				} else {
+					allQuaders = findAllQuadersAsync(blockData, structureCorners);
+				}
+			} while (!blockData.isEmpty() && USE_LOOPED_SEARCH && runs < 5);
 			int quaderAmount = 0;
 			for (var val : allQuaders.values()) quaderAmount += val.size();
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] " + quaderAmount + " Quaders created in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Making clusters..."); oldtime = time;
@@ -97,7 +116,10 @@ public class SchematicFactory {
 		time = System.nanoTime();
 		Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Cluster creation complete in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms.");
 	}
-	
+
+	public static void createSchematicAsync(String schematicName, Location _startPoint, Location _endPoint, boolean captureAir) {
+		createSchematicAsync(schematicName, _startPoint, _endPoint, captureAir, null);
+	}
 	/**
 	 * Recommended for larger structures
 	 * @param schematicName
@@ -105,24 +127,32 @@ public class SchematicFactory {
 	 * @param _endPoint
 	 * @param captureAir
 	 */
-	public static void createSchematicAsync(String schematicName, Location _startPoint, Location _endPoint, boolean captureAir) {
+	public static void createSchematicAsync(String schematicName, Location _startPoint, Location _endPoint, boolean captureAir, Player callback) {
 		new Thread(() -> {
 			long time = System.nanoTime();
 			Bukkit.getLogger().info("Starting new Thread for creation of schematic " + schematicName);
 			SchematicFactory schem = new SchematicFactory(schematicName, _startPoint, _endPoint, captureAir);
-			schem.writeToFile();
+			schem.writeToFile(callback);
 			Bukkit.getLogger().info("Total time: " + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms");
 		}).start();
 	}
 	
 	public void writeToFile() {
-		writeToFile(true);
+		writeToFile(true, null);
+	}
+	public void writeToFile(Player callback) {
+		writeToFile(true, callback);
 	}
 	public void writeToFile(boolean overrideFile) {
+		writeToFile(overrideFile, null);
+	}
+	public void writeToFile(boolean overrideFile, Player callback) {
 		File schemFile = new File(TardisPlugin.singleton.getDataFolder() + "/schematics/", schematicName + Schematic.FILE_ENDING);
 		if (schemFile.exists()) {
 			if (!overrideFile) {
-				Bukkit.getLogger().severe(String.format("Could not write to file %s.schem: File already exists.", schematicName));
+				String result = String.format("Could not write to file %s.schem: File already exists.", schematicName);
+				Bukkit.getLogger().severe(result);
+				if (callback != null) callback.sendMessage(result);
 				return;
 			}
 			schemFile.delete();
@@ -147,8 +177,14 @@ public class SchematicFactory {
 			}
 			fos.flush();
 			fos.close();
-			Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Complete (" + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms).");
-			Bukkit.getLogger().info("Created schematic " + schemFile.getName() + " with " + byteCount + " bytes");
+			String result1 = "[SchematicCreator 4 " + schematicName + "] Complete (" + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms).";
+			String result2 = "Created schematic " + schemFile.getName() + " with " + byteCount + " bytes";
+			Bukkit.getLogger().info(result1);
+			Bukkit.getLogger().info(result2);
+			if (callback != null) {
+				callback.sendMessage("§2" + result1);
+				callback.sendMessage("§e" + result2);
+			}
 		} catch (IOException e) {
 			Bukkit.getLogger().severe(String.format("An error occured while trying to create schematic file %s.schem", schematicName));
 			e.printStackTrace();
@@ -614,6 +650,85 @@ public class SchematicFactory {
 		
 		return allQuaders;
 	}
+
+	/**
+	 * Careful, modifies the blockdata map.
+	 * @param blockData
+	 * @param structureCorners
+	 * @return
+	 */
+	private void findAllQuadersAsync2(Map<Material, Set<Quader>> allQuaders, Map<Material, List<BlockData>> blockData, Map<Material, List<StructureCorner>> structureCorners) {
+		// Create a thread pool based on the number of available processors
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		Map<Material, Future<Pair<Set<Vector>, Set<Quader>>>> futures = new HashMap<>();
+
+		for (Material mat : blockData.keySet()) {
+			final Material material = mat;
+			// Submit a task for each material to process in parallel
+			futures.put(material, executor.submit(() -> {
+				Set<Quader> quaders = new HashSet<>();
+				List<StructureCorner> corners = structureCorners.get(material);
+				Set<Vector> processedBlocks = new HashSet<>();
+
+				// Todo Limit to maybe 50 corners per task
+
+				if (corners == null) {
+					Bukkit.getLogger().warning("List for material " + material + " was null, not copying.");
+					return new Pair<>(processedBlocks, quaders);
+				}
+
+				for (var corner : corners) {
+					Set<Vector> blockLocations = new HashSet<>();
+					for (var data : blockData.get(material)) {
+						if (data.isDataSame(corner.blockData)) blockLocations.add(data.location);
+					}
+
+					processedBlocks.addAll(processCorner2(corner, blockLocations, quaders));
+				}
+				return new Pair<>(processedBlocks, quaders);
+			}));
+		}
+
+		executor.shutdown();
+		try {
+			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Bukkit.getLogger().severe("Building Quaders interrupted.");
+			Thread.currentThread().interrupt();
+		}
+
+		// Collect all results
+		int size = 0;
+		for (var val : blockData.values()) size += val.size();
+		System.out.println("§eReducing size of blockdata... (former: " + size + ")");
+		futures.forEach((material, future) -> {
+			try {
+				var pair = future.get();
+				var list = allQuaders.getOrDefault(material, new HashSet<>());
+				Bukkit.broadcastMessage("§e[" + material + "] Adding " + pair.value2.size() + " quaders to list of size " + list.size() + ".");
+				list.addAll(pair.value2);
+				allQuaders.put(material, list);
+				Bukkit.broadcastMessage("§d[" + material + "] Quaders size for material is: " + allQuaders.get(material).size() + ".");
+				/*
+				if (allQuaders.containsKey(material)) allQuaders.get(material).addAll(pair.value2);
+				else allQuaders.put(material, pair.value2);
+				 */
+				if (blockData.containsKey(material)) {
+					//blockData.get(material).removeAll(pair.value1);
+					// Remove all does not work unless we override BlockData.hashCode() to match only location
+					blockData.get(material).removeIf(blockDataItem -> pair.value1.contains(blockDataItem.location));
+					if (blockData.get(material).isEmpty()) blockData.remove(material);
+					System.out.println("Removed " + pair.value1.size() + " elements for material " + material);
+				}
+			} catch (InterruptedException | ExecutionException e) {
+				Bukkit.getLogger().warning("Failed to compute quaders for " + material);
+				Thread.currentThread().interrupt();
+			}
+		});
+		size = 0;
+		for (var val : blockData.values()) size += val.size();
+		System.out.println("§dReduced size of blockdata... (latter: " + size + ")");
+	}
 	
 	private void processCorner(StructureCorner corner, Set<Vector> blockLocations, Set<Quader> quaders) {
 		if (corner.explorerPaths.isEmpty()) {
@@ -656,6 +771,54 @@ public class SchematicFactory {
 				quaders.add(quader);
 			}
 		}
+	}
+
+	private Set<Vector> processCorner2(StructureCorner corner, Set<Vector> blockLocations, Set<Quader> quaders) {
+		Set<Vector> processedBlocks = new HashSet<>();
+		if (corner.explorerPaths.isEmpty()) {
+			// Single block, just build one (1) quader
+			Quader quader = new Quader(corner.blockData, corner.blockData.location, corner.blockData.location);
+			quaders.add(quader);
+			processedBlocks.add(corner.blockData.location.clone());
+		} else {
+			Vector start = corner.blockData.location.clone(), end = corner.blockData.location.clone();
+			for (var currentExplorer : corner.explorerPaths) {
+				int explorerIndex = 0;
+				Vector currentAxis = currentExplorer[explorerIndex];
+
+				while (currentAxis != null) {
+					final boolean negativeExpansion = isNegativeExpansion(currentAxis);
+					// Todo If we encounter a corner, perhaps make sure to remove the OPPOSITE direction as starting point
+					while (true) {
+						var blockRow = getNextBlockRow(start, end, currentAxis);
+						if (blockRow.isEmpty()) break;
+						boolean _break = false;
+						for (Vector block : blockRow) {
+							if (!blockLocations.contains(block)) {
+								// Exploration finished, can't explore further
+								_break = true;
+								break;
+							}
+						}
+						if (_break) break;
+
+						processedBlocks.addAll(blockRow);
+
+						if (negativeExpansion) start.add(currentAxis);
+						else end.add(currentAxis);
+					}
+
+					explorerIndex++;
+					currentAxis = explorerIndex < currentExplorer.length ? currentExplorer[explorerIndex] : null;
+				}
+				// Now we've expanded all we can
+
+				// Let's build a quader
+				Quader quader = new Quader(corner.blockData, start, end);
+				quaders.add(quader);
+			}
+		}
+		return processedBlocks;
 	}
 	
 	//endregion
