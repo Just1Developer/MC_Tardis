@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static net.justonedev.mc.tardisplugin.schematics.StructureCorner.*;
+
 public class SchematicFactory {
 
 	private static final int NANO_TO_MILLI_TIME = 1000000;
@@ -87,7 +89,7 @@ public class SchematicFactory {
 			oldtime = System.nanoTime();
 			blockData = scanEnvironment(minLocation, bounds);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scan completed in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Finding corners..."); oldtime = time;
-			structureCorners = findCorners(blockData);
+			structureCorners = findAllCornersSync(blockData);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Found all corners in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Creating quaders..."); oldtime = time;
 			allQuaders = findAllQuaders(blockData, structureCorners);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Quaders created in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Making clusters..."); oldtime = time;
@@ -247,20 +249,29 @@ public class SchematicFactory {
 		return new ConcurrentHashMap<>(concurrentBlockData);
 	}
 	
-	private static final Vector UP = new Vector(0, 1, 0), DOWN = new Vector(0, -1, 0), NORTH = new Vector(1, 0, 0), EAST = new Vector(0, 0, 1), SOUTH = new Vector(-1, 0, 0), WEST = new Vector(0, 0, -1);
-	
-	private static final boolean ALLOW_EDGES_AS_CORNERS = false;
-	private ConcurrentHashMap<Material, ConcurrentLinkedDeque<StructureCorner>> findCorners(ConcurrentHashMap<Material, ConcurrentLinkedDeque<BlockData>> blockData) {
+	// Force concurrent data types everywhere
+	private ConcurrentHashMap<Material, ConcurrentLinkedDeque<StructureCorner>> findAllCornersSync(ConcurrentHashMap<Material, ConcurrentLinkedDeque<BlockData>> blockData) {
 		ConcurrentHashMap<Material, ConcurrentLinkedDeque<StructureCorner>> structureCorners = new ConcurrentHashMap<>();
 		
-		// Go through all the blocks.
+		// Submit tasks for each material to the executor service
 		for (Material mat : blockData.keySet()) {
+			ConcurrentLinkedDeque<StructureCorner> corners = new ConcurrentLinkedDeque<>();
+			ConcurrentHashMap<Integer, Set<Vector>> seenLocationsMap = new ConcurrentHashMap<>();
+			//System.out.println(cur + " >> 1");
+			for (var data : blockData.get(mat)) {
+				int hash = data.hashCode2();
+				if (seenLocationsMap.containsKey(hash)) {
+					seenLocationsMap.get(hash).add(data.location);
+				} else {
+					Set<Vector> set = new HashSet<>();
+					set.add(data.location);
+					seenLocationsMap.put(hash, set);
+				}
+			}
 			for (var data : blockData.get(mat)) {
 				// set probably has better access time than our List
-				Set<Vector> seenLocations = new HashSet<>();
-				for (var _data : blockData.get(mat)) {
-					if (data.isDataSame(_data)) seenLocations.add(_data.location);
-				}
+				var seenLocations = seenLocationsMap.getOrDefault(data.hashCode2(), null);
+				if (seenLocations == null) continue;
 				
 				// We have a block. To be a corner, the block needs to have max. 1 neighbor on each axis.
 				// In total, we are looking for six neighbors.
@@ -274,57 +285,9 @@ public class SchematicFactory {
 				boolean d = seenLocations.contains(data.location.clone().add(DOWN));
 				if (u && d) continue;
 				
-				StructureCorner corner = new StructureCorner(data, n, s, e, w, u, d);
-				if (structureCorners.containsKey(data.material)) {
-					structureCorners.get(data.material).add(corner);
-				} else {
-					ConcurrentLinkedDeque<StructureCorner> list = new ConcurrentLinkedDeque<>();
-					list.add(corner);
-					structureCorners.put(data.material, list);
-				}
+				corners.add(new StructureCorner(data, n, s, e, w, u, d));
 			}
-		}
-		return structureCorners;
-	}
-	
-	
-	// Force concurrent data types everywhere
-	private ConcurrentHashMap<Material, ConcurrentLinkedDeque<StructureCorner>> findAllCornersSync(ConcurrentHashMap<Material, ConcurrentLinkedDeque<BlockData>> blockData) {
-		ConcurrentHashMap<Material, ConcurrentLinkedDeque<StructureCorner>> structureCorners = new ConcurrentHashMap<>();
-		
-		// Submit tasks for each material to the executor service
-		for (Material mat : blockData.keySet()) {
-				ConcurrentLinkedDeque<StructureCorner> corners = new ConcurrentLinkedDeque<>();
-				ConcurrentHashMap<Integer, Set<Vector>> seenLocationsMap = new ConcurrentHashMap<>();
-				for (var data : blockData.get(mat)) {
-					int hash = data.hashCode2();
-					if (seenLocationsMap.containsKey(hash)) {
-						seenLocationsMap.get(hash).add(data.location);
-					} else {
-						Set<Vector> set = new HashSet<>();
-						set.add(data.location);
-						seenLocationsMap.put(hash, set);
-					}
-				}
-				for (var data : blockData.get(mat)) {
-					// set probably has better access time than our List
-					var seenLocations = seenLocationsMap.getOrDefault(data.hashCode2(), null);
-					if (seenLocations == null) continue;
-					
-					// We have a block. To be a corner, the block needs to have max. 1 neighbor on each axis.
-					// In total, we are looking for six neighbors.
-					boolean n = seenLocations.contains(data.location.clone().add(NORTH));
-					boolean s = seenLocations.contains(data.location.clone().add(SOUTH));
-					if (n && s) continue;
-					boolean e = seenLocations.contains(data.location.clone().add(EAST));
-					boolean w = seenLocations.contains(data.location.clone().add(WEST));
-					if (e && w) continue;
-					boolean u = seenLocations.contains(data.location.clone().add(UP));
-					boolean d = seenLocations.contains(data.location.clone().add(DOWN));
-					if (u && d) continue;
-					
-					corners.add(new StructureCorner(data, n, s, e, w, u, d));
-				}
+			//Bukkit.broadcastMessage("Found " + corners.size() + " Corners for Material " + mat + " in " + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms");
 			structureCorners.put(mat, corners);
 		}
 		
