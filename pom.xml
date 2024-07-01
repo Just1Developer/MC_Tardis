@@ -6,7 +6,7 @@
 
     <groupId>net.justonedev.mc</groupId>
     <artifactId>TardisPlugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.3-devbuild</version>
     <packaging>jar</packaging>
 
     <name>TardisPlugin</name>

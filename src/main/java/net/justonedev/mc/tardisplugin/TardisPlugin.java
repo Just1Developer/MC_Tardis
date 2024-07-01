@@ -25,7 +25,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
@@ -36,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +57,12 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     public Map<Integer, Tardis> tardises;
     public Map<UUID, Tardis> tardisesByEntityUUID;
 
+    private static final boolean USE_RESOURCE_PACK = true;
+    private static final String RESOURCE_PACK_LINK = "https://www.dropbox.com/scl/fi/i9j03w9u6e00bfn359ygp/9Tardis-Pack.zip?rlkey=57ih00xjs8ffwjep7npxumbpd&st=bl5dwivl&dl=1";
+    private static final String RESOUCE_PACK_SHA256_STR = "0bf67de187c607a858a2ef6fef9783e3c288f23a";
+    private static final byte[] RESOUCE_PACK_SHA256 = hexStringToByteArray(RESOUCE_PACK_SHA256_STR);
+    // Generated using [Windows: certutil -hashfile "§9Tardis Pack.zip" SHA1   MacOS: shasum -a 1 "§9Tardis Pack.zip"]
+
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -66,15 +75,14 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         pm.registerEvents(new TardisEvents(), this);
         pm.registerEvents(schmaker, this);
 
-        getCommand("makeschematic").setExecutor(this);
-        getCommand("buildschematic").setExecutor(this);
-        getCommand("buildschematic").setTabCompleter(this);
-        getCommand("breakdownschematic").setExecutor(this);
-        getCommand("breakdownschematic").setTabCompleter(this);
-        getCommand("schematics").setExecutor(this);
         getCommand("schmaker").setExecutor(schmaker);
-
         if (this.getDescription().getVersion().toLowerCase().contains("dev")) {
+            getCommand("makeschematic").setExecutor(this);
+            getCommand("buildschematic").setExecutor(this);
+            getCommand("buildschematic").setTabCompleter(this);
+            getCommand("breakdownschematic").setExecutor(this);
+            getCommand("breakdownschematic").setTabCompleter(this);
+            getCommand("schematics").setExecutor(this);
             Bukkit.getLogger().info("This is a developer build. Registering additional commands spawnmodel, tptardisworld, home and test");
             getCommand("spawnmodel").setExecutor(this);
             getCommand("tptardisworld").setExecutor(this);
@@ -96,6 +104,15 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     public void onDisable() {
         // Plugin shutdown logic
         TardisFiles.saveAll();
+    }
+
+
+    @EventHandler
+    public void onJoinApplyResourcePack(PlayerJoinEvent e) {
+        if (!USE_RESOURCE_PACK) return;
+        // Later this is in a file.
+        if (RESOURCE_PACK_LINK == null || RESOUCE_PACK_SHA256_STR == null || RESOUCE_PACK_SHA256 == null) return;
+        e.getPlayer().setResourcePack(RESOURCE_PACK_LINK, RESOUCE_PACK_SHA256);
     }
     
     public static ArmorStand spawnModel(Location _loc, TardisModelType modelType) {
@@ -161,6 +178,10 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player p = (Player) sender;
+        if (!p.isOp()) {
+            p.sendMessage("§cNah");
+            return false;
+        }
         if (command.getName().equals("spawnmodel")) {
             Tardis t = Tardis.createNewTardis(p.getUniqueId());
             t.spawnTardis(p.getLocation().clone().add(1, 0, 0));
@@ -285,26 +306,56 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         return true;
     }
 
+    private static final String[] autocomplete_stopIt_words = {
+            "Finished",
+            "Stop",
+            "No",
+            "I",
+            "Said",
+            "Stop",
+            "We",
+            "Are",
+            "Done",
+            "I",
+            "mean",
+            "it",
+            "!",
+            "!!",
+            "!!!!!",
+    };
+
     @Nullable
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        if (sender instanceof Player) {
-            if (command.getName().equalsIgnoreCase("buildschematic") || command.getName().equalsIgnoreCase("breakdownschematic")) {
-                if (args.length == 0) {
-                    List<String> names = new ArrayList<>();
-                    File folder = new File(getDataFolder() + "/schematics/");
-                    if (!folder.exists()) return super.onTabComplete(sender, command, alias, args);
-                    for (File f : folder.listFiles()) {
-                        if (!f.getName().endsWith(".tschem")) continue;
-                        String[] path = f.getName().contains("/") ? f.getName().split("/") : f.getName().contains("\\") ? f.getName().split("\\\\") : new String[] { f.getName() };
-                        if (path == null || path.length == 0) continue;
-                        String name = path[path.length - 1];
-                        names.add(name);
-                    }
-                    return names;
+        if (command.getName().equalsIgnoreCase("buildschematic") || command.getName().equalsIgnoreCase("breakdownschematic")) {
+            List<String> names = new ArrayList<>();
+            if (args.length == 1) {
+                File folder = new File(getDataFolder() + "/schematics/");
+                if (!folder.exists()) return super.onTabComplete(sender, command, alias, args);
+                for (File f : folder.listFiles()) {
+                    if (!f.getName().endsWith(".tschem")) continue;
+                    String[] path = f.getName().contains("/") ? f.getName().split("/") : f.getName().contains("\\") ? f.getName().split("\\\\") : new String[] { f.getName() };
+                    if (path == null || path.length == 0) continue;
+                    String name = path[path.length - 1];
+                    name = name.substring(0, name.length() - ".tschem".length());
+                    names.add(name);
                 }
+            } else if (args.length > 2 && args.length < autocomplete_stopIt_words.length + 3) {
+                return Collections.singletonList(autocomplete_stopIt_words[args.length - 3]);
             }
+            return names;
         }
         return super.onTabComplete(sender, command, alias, args);
+    }
+
+    // Helper method to convert SHA-1 hash string to byte array
+    private static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 }
