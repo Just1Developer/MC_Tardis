@@ -27,9 +27,9 @@ import java.util.concurrent.TimeUnit;
 import static net.justonedev.mc.tardisplugin.schematics.StructureCorner.*;
 
 public class SchematicFactory {
-
+	
 	private static final int NANO_TO_MILLI_TIME = 1000000;
-
+	
 	private final Vector bounds;
 	final String schematicName;
 	List<Cluster> clusters;
@@ -63,7 +63,7 @@ public class SchematicFactory {
 				Math.max(_startPoint.getBlockZ(), _endPoint.getBlockZ()) - minLocation.getBlockZ() + 1
 		);
 		this.bounds = bounds.clone();
-
+		
 		long time, oldtime;
 		
 		if (async) {
@@ -71,7 +71,7 @@ public class SchematicFactory {
 			oldtime = System.nanoTime();
 			blockData = scanEnvironmentAsync2(minLocation, bounds);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Scan completed in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Finding corners..."); oldtime = time;
-
+			
 			int runs = 0;
 			allQuaders = new ConcurrentHashMap<>();
 			do {
@@ -94,7 +94,7 @@ public class SchematicFactory {
 			allQuaders = findAllQuaders(blockData, structureCorners);
 			time = System.nanoTime(); Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Quaders created in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms. Making clusters..."); oldtime = time;
 		}
-
+		
 		
 		// Make all same quaders into clusters
 		clusters = new ArrayList<>();
@@ -104,7 +104,7 @@ public class SchematicFactory {
 		time = System.nanoTime();
 		Bukkit.getLogger().info("[SchematicCreator 4 " + schematicName + "] Cluster creation complete in " + ((time - oldtime) / NANO_TO_MILLI_TIME) + " ms.");
 	}
-
+	
 	public static void createSchematicAsync(String schematicName, Location _startPoint, Location _endPoint, boolean captureAir) {
 		createSchematicAsync(schematicName, _startPoint, _endPoint, captureAir, null);
 	}
@@ -121,7 +121,11 @@ public class SchematicFactory {
 			Bukkit.getLogger().info("Starting new Thread for creation of schematic " + schematicName);
 			SchematicFactory schem = new SchematicFactory(schematicName, _startPoint, _endPoint, captureAir);
 			schem.writeToFile(callback);
-			Bukkit.getLogger().info("Total time: " + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms");
+			String timeMsg = "Total time: " + ((System.nanoTime() - time) / NANO_TO_MILLI_TIME) + " ms";
+			Bukkit.getLogger().info(timeMsg);
+			if (callback != null) {
+				callback.sendMessage("§e" + timeMsg);
+			}
 		}).start();
 	}
 	
@@ -170,7 +174,6 @@ public class SchematicFactory {
 			Bukkit.getLogger().info(result1);
 			Bukkit.getLogger().info(result2);
 			if (callback != null) {
-				callback.sendMessage("§2" + result1);
 				callback.sendMessage("§e" + result2);
 			}
 		} catch (IOException e) {
@@ -423,7 +426,7 @@ public class SchematicFactory {
 		}
 		
 		toX++; toY++; toZ++;
-
+		
 		fromX = Math.max(Math.min(fromX, bounds.getBlockX()), 0);
 		toX = Math.max(Math.min(toX, bounds.getBlockX()), 0);
 		fromY = Math.max(Math.min(fromY, bounds.getBlockY()), 0);
@@ -441,10 +444,10 @@ public class SchematicFactory {
 		}
 		return nextBlocks;
 	}
-
+	
 	
 	//region Async Quader Creation
-
+	
 	/**
 	 * Careful, modifies the blockdata and allQuaders maps.
 	 * @param blockData
@@ -455,7 +458,7 @@ public class SchematicFactory {
 		// Create a thread pool based on the number of available processors
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		Map<Material, Future<Pair<Set<Vector>, Set<Quader>>>> futures = new ConcurrentHashMap<>();
-
+		
 		for (Material mat : blockData.keySet()) {
 			final Material material = mat;
 			// Submit a task for each material to process in parallel
@@ -486,7 +489,7 @@ public class SchematicFactory {
 				return new Pair<>(processedBlocks, quaders);
 			}));
 		}
-
+		
 		executor.shutdown();
 		try {
 			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
@@ -494,7 +497,7 @@ public class SchematicFactory {
 			Bukkit.getLogger().severe("Building Quaders interrupted.");
 			Thread.currentThread().interrupt();
 		}
-
+		
 		// Collect all results
 		futures.forEach((material, future) -> {
 			try {
@@ -526,7 +529,7 @@ public class SchematicFactory {
 			for (var currentExplorer : corner.explorerPaths) {
 				int explorerIndex = 0;
 				Vector currentAxis = currentExplorer[explorerIndex];
-
+				
 				while (currentAxis != null) {
 					final boolean negativeExpansion = isNegativeExpansion(currentAxis);
 					// Todo If we encounter a corner, perhaps make sure to remove the OPPOSITE direction as starting point
@@ -542,18 +545,18 @@ public class SchematicFactory {
 							}
 						}
 						if (_break) break;
-
+						
 						processedBlocks.addAll(blockRow);
-
+						
 						if (negativeExpansion) start.add(currentAxis);
 						else end.add(currentAxis);
 					}
-
+					
 					explorerIndex++;
 					currentAxis = explorerIndex < currentExplorer.length ? currentExplorer[explorerIndex] : null;
 				}
 				// Now we've expanded all we can
-
+				
 				// Let's build a quader
 				Quader quader = new Quader(corner.blockData, start, end);
 				quaders.add(quader);
