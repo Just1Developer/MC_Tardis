@@ -58,9 +58,10 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     public Map<UUID, Tardis> tardisesByEntityUUID;
 
     private static final boolean USE_RESOURCE_PACK = true;
+    private static final UUID RESOURCE_PACK_UUID = UUID.randomUUID();
     private static final String RESOURCE_PACK_LINK = "https://www.dropbox.com/scl/fi/i9j03w9u6e00bfn359ygp/9Tardis-Pack.zip?rlkey=57ih00xjs8ffwjep7npxumbpd&st=bl5dwivl&dl=1";
-    private static final String RESOUCE_PACK_SHA256_STR = "0bf67de187c607a858a2ef6fef9783e3c288f23a";
-    private static final byte[] RESOUCE_PACK_SHA256 = hexStringToByteArray(RESOUCE_PACK_SHA256_STR);
+    private static final String RESOURCE_PACK_SHA1_STR = "0bf67de187c607a858a2ef6fef9783e3c288f23a";
+    private static final byte[] RESOURCE_PACK_SHA1 = hexStringToByteArray(RESOURCE_PACK_SHA1_STR);
     // Generated using [Windows: certutil -hashfile "§9Tardis Pack.zip" SHA1   MacOS: shasum -a 1 "§9Tardis Pack.zip"]
 
     @Override
@@ -111,8 +112,8 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
     public void onJoinApplyResourcePack(PlayerJoinEvent e) {
         if (!USE_RESOURCE_PACK) return;
         // Later this is in a file.
-        if (RESOURCE_PACK_LINK == null || RESOUCE_PACK_SHA256_STR == null || RESOUCE_PACK_SHA256 == null) return;
-        e.getPlayer().setResourcePack(RESOURCE_PACK_LINK, RESOUCE_PACK_SHA256);
+        if (RESOURCE_PACK_LINK == null || RESOURCE_PACK_SHA1_STR == null || RESOURCE_PACK_SHA1 == null) return;
+        e.getPlayer().addResourcePack(RESOURCE_PACK_UUID, RESOURCE_PACK_LINK, RESOURCE_PACK_SHA1, "This server has Tardises which use a custom resource pack. Usage is highly recommended.", false);
     }
     
     public static ArmorStand spawnModel(Location _loc, TardisModelType modelType) {
