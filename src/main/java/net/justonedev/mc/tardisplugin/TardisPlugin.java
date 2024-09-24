@@ -12,6 +12,7 @@ import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
 import net.justonedev.mc.tardisplugin.tardis.TardisModelType;
 import net.justonedev.mc.tardisplugin.tardis.TardisWorldGen;
+import net.justonedev.mc.tardisplugin.tardisdata.TardisProtection;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -74,6 +75,7 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(this, this);
         pm.registerEvents(new TardisEvents(), this);
+        pm.registerEvents(new TardisProtection(), this);
         pm.registerEvents(schmaker, this);
 
         getCommand("schmaker").setExecutor(schmaker);

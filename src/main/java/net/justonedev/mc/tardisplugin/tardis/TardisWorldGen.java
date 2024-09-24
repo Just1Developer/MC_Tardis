@@ -69,6 +69,8 @@ public final class TardisWorldGen {
         return world;
     }
 
+    public static boolean isInteriorWorld(World w) { return world != null && world.equals(w); }
+
     /**
      * Calculates the interior plot the tardis with the given ID would have.
      * @param tardisID The tardis ID.
