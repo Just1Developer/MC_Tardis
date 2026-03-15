@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
 import java.util.List;
@@ -25,10 +26,16 @@ public class TardisProtection implements Listener {
 
     private void handleExplosion(List<Block> blocks) {
         for (int i = 0; i < blocks.size(); ++i) {
-            if (BlockUtils.getTardisBlockOwnership(blocks.get(i)) > 1) continue;
+            int ownership = BlockUtils.getTardisBlockOwnership(blocks.get(i));
+            if (ownership == -1 || ownership > 2) continue;
             blocks.remove(i);
             --i;
         }
+    }
+
+    @EventHandler
+    public void onDamage(EntityDamageEvent e) {
+        if (TardisEvents.isTardisComponent(e.getEntity())) e.setCancelled(true);
     }
 
 }

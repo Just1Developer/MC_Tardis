@@ -50,7 +50,7 @@ public class TardisEvents implements Listener {
             Optional<ArmorStand> model = tardis.getCurrentModelTardis();
             if (model.isEmpty()) return;
             
-            e.getPlayer().teleport(model.get().getLocation().clone().add(model.get().getLocation().getDirection()));
+            e.getPlayer().teleport(model.get().getLocation().clone().subtract(model.get().getLocation().getDirection()));
         }
     }
     
@@ -167,9 +167,14 @@ public class TardisEvents implements Listener {
     }
     
     //endregion
-    
+
+    /**
+     * If the given Entity is any tardis model component, like a shell or a console.
+     * @param entity The entity in question.
+     * @return True if a tardis model, false if not.
+     */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private static boolean isTardisComponent(Entity entity) {
+    public static boolean isTardisComponent(Entity entity) {
         if (entity.getType() != EntityType.ARMOR_STAND) return false;
         if (entity.getCustomName() == null) return false;
         return entity.getCustomName().startsWith("tardis");

@@ -11,8 +11,8 @@ import net.justonedev.mc.tardisplugin.tardis.TardisCharger;
 import net.justonedev.mc.tardisplugin.tardis.TardisEvents;
 import net.justonedev.mc.tardisplugin.tardis.TardisFiles;
 import net.justonedev.mc.tardisplugin.tardis.TardisModelType;
+import net.justonedev.mc.tardisplugin.tardis.TardisProtection;
 import net.justonedev.mc.tardisplugin.tardis.TardisWorldGen;
-import net.justonedev.mc.tardisplugin.tardisdata.TardisProtection;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,7 +22,10 @@ import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -78,19 +81,19 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         pm.registerEvents(new TardisProtection(), this);
         pm.registerEvents(schmaker, this);
 
-        getCommand("schmaker").setExecutor(schmaker);
+        setCommandExecutor("schmaker", schmaker);
         if (this.getDescription().getVersion().toLowerCase().contains("dev")) {
-            getCommand("makeschematic").setExecutor(this);
-            getCommand("buildschematic").setExecutor(this);
-            getCommand("buildschematic").setTabCompleter(this);
-            getCommand("breakdownschematic").setExecutor(this);
-            getCommand("breakdownschematic").setTabCompleter(this);
-            getCommand("schematics").setExecutor(this);
+            setCommandExecutor("makeschematic", this);
+            setCommandExecutor("buildschematic", this);
+            setTabCompleter("buildschematic", this);
+            setCommandExecutor("breakdownschematic", this);
+            setTabCompleter("breakdownschematic", this);
+            setCommandExecutor("schematics", this);
             Bukkit.getLogger().info("This is a developer build. Registering additional commands spawnmodel, tptardisworld, home and test");
-            getCommand("spawnmodel").setExecutor(this);
-            getCommand("tptardisworld").setExecutor(this);
-            getCommand("home").setExecutor(this);
-            getCommand("test").setExecutor(this);
+            setCommandExecutor("spawnmodel", this);
+            setCommandExecutor("tptardisworld", this);
+            setCommandExecutor("home", this);
+            setCommandExecutor("test", this);
         }
         
         BlockData.init();
@@ -101,6 +104,20 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
         TardisFiles.initialize();
         
         TardisCharger.startChargingScheduler();
+    }
+
+    // The following 2 methods prevent the nullable warnings from getCommand().setExecutor() chaining above
+
+    private void setCommandExecutor(String command, CommandExecutor executor) {
+        PluginCommand cmd = getCommand(command);
+        if (cmd == null) return;
+        cmd.setExecutor(executor);
+    }
+
+    private void setTabCompleter(String command, TabCompleter completer) {
+        PluginCommand cmd = getCommand(command);
+        if (cmd == null) return;
+        cmd.setTabCompleter(completer);
     }
 
     @Override
@@ -256,6 +273,8 @@ public final class TardisPlugin extends JavaPlugin implements Listener {
                     .with(new BlockMetaDataInjection(Material.GLASS).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE)
                             .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_IMMORTAL_METADATA_VALUE)))
                     .with(new BlockMetaDataInjection(Material.AIR).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)
+                            .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)))
+                    .with(new BlockMetaDataInjection(Material.SMOOTH_QUARTZ).addMetadataTag(Tardis.SHELL_GENERATED_BY_WHO_METADATA_TAG, Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)
                             .addRunFunction(Tardis.getSetOwnershipFunction(Tardis.SHELL_TARDIS_GENERATED_METADATA_VALUE)))
                     : schematic)
                     .placeInWorldAsync(p.getLocation().clone().add(p.getLocation().getDirection()).add(1, 0, 1), p);

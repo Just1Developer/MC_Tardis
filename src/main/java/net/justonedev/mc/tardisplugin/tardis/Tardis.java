@@ -50,7 +50,7 @@ public class Tardis {
     /**
      * If the tardis can be joined. Generally the case, just not when the control room is (re-)building.
      */
-    private boolean isReady;
+    private volatile boolean isReady;
 
     private UUID tardisOuterShellUUID;
     private Location tardisOuterShellLocation;
@@ -134,8 +134,8 @@ public class Tardis {
                 setShellModelData(TardisConstants.DATA_TARDIS_SHELL_ORIGINAL);
                 Bukkit.getScheduler().cancelTask(animationScheduler);
                 
-                // Todo building async
-                buildTardisControlRoom();
+                // building async
+                Thread.startVirtualThread(this::buildTardisControlRoom);
                 TardisWorldGen.getInteriorWorld().loadChunk(spawnLocation.getChunk());
             }
         }, 0, 2);
